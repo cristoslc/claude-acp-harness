@@ -1,0 +1,32 @@
+# Claude ACP Harness Configuration
+
+# Default tmux session settings
+session:
+  name: "claude-harness"
+  socket_path: "/tmp/tmux-{uid}/default"
+  
+# I/O settings
+io:
+  # How often to poll for output (seconds)
+  poll_interval: 0.1
+  # Maximum time to wait for command completion (seconds)
+  command_timeout: 30
+  
+# Claude integration settings
+claude:
+  # Path to claude executable (if applicable)
+  executable: "claude"
+  # Default working directory for claude sessions
+  working_directory: "."
+  
+# Logging configuration
+logging:
+  level: "INFO"
+  file: "claude-harness.log"
+  max_size: "10MB"
+  backup_count: 5
+
+# Development settings
+development:
+  debug: false
+  mock_tmux: false

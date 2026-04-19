@@ -1,0 +1,75 @@
+trove_id: ai-agent-session-pricing
+created: 2026-04-19
+refreshed: 2026-04-19
+tags:
+  - ai-agents
+  - session-pricing
+  - subscription-models
+  - persistent-sessions
+  - cost-efficiency
+  - open-source
+  - claude
+  - managed-agents
+  - multi-agent
+
+sources:
+  - source_id: anthropic-managed-agents-pricing
+    title: "Claude Managed Agents Pricing and Beta Limits | WaveSpeedAI Blog"
+    author: Dora
+    url: https://wavespeed.ai/blog/posts/claude-managed-agents-pricing-2026/
+    date: 2026-04-15
+    fetched: 2026-04-19
+    type: blog-post
+    freshness_ttl: 30 # days
+    proxy_used: false
+    content_hash: "--"
+    
+  - source_id: anthropic-platform-pricing
+    title: "Pricing - Claude API Docs"
+    author: Anthropic
+    url: https://platform.claude.com/docs/en/about-claude/pricing
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: documentation
+    freshness_ttl: 7 # days
+    proxy_used: false
+    content_hash: "--"
+    
+  - source_id: cost-efficient-tools
+    title: "13 Best Open-Source AI Agent Tools in 2025: Complete Developer Guide + Setup Tutorials"
+    author: Latenode Blog
+    url: https://latenode.com/blog/ai-agents-autonomous-systems/open-source-ai-agent-tools/13-best-open-source-ai-agent-tools-in-2025-complete-developer-guide-setup-tutorials
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: blog-post
+    freshness_ttl: 30 # days
+    proxy_used: false
+    content_hash: "--"
+    
+  - source_id: hermes-agent
+    title: "Hermes Agent: AI That Learns & Grows With You | Open Source"
+    author: Nous Research
+    url: https://hermesagent.agency/
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: website
+    freshness_ttl: 30 # days
+    proxy_used: false
+    content_hash: "--"
+    
+  - source_id: awesome-agents-curation
+    title: "GitHub - kyrolabs/awesome-agents: 🤖 Awesome list of AI Agents"
+    author: kyrolabs
+    url: https://github.com/kyrolabs/awesome-agents
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: github-repository
+    freshness_ttl: 14 # days
+    proxy_used: false
+    content_hash: "--"
+
+history:
+  - event: created
+    date: 2026-04-19
+    commit: "--"
+    sources: 5
