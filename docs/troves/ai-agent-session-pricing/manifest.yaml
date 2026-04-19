@@ -11,6 +11,13 @@ tags:
   - claude
   - managed-agents
   - multi-agent
+  - OAuth
+  - OpenAI
+  - Anthropic
+  - Google
+  - session-based-billing
+  - ai-subscription
+  - cost-optimization
 
 sources:
   - source_id: anthropic-managed-agents-pricing
@@ -67,9 +74,60 @@ sources:
     freshness_ttl: 14 # days
     proxy_used: false
     content_hash: "--"
+    
+  - source_id: openai-oauth-authentication
+    title: "Authentication – Apps SDK | OpenAI Developers"
+    author: OpenAI
+    url: https://developers.openai.com/apps-sdk/build/auth
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: documentation
+    freshness_ttl: 7 # days
+    proxy_used: false
+    content_hash: "f166f9fd64bb3d53f744f699b944c05c7abd8e97c83974d4bbbb97702be42df6"
+    
+  - source_id: anthropic-oauth-policy
+    title: "Authentication - Claude Code Docs"
+    author: Anthropic
+    url: https://code.claude.com/docs/en/authentication
+    url2: https://www.reddit.com/r/ClaudeAI/comments/1r8ecyq/anthropic_bans_oauth_tokens_from_consumer_plans/
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: documentation
+    freshness_ttl: 7 # days
+    proxy_used: false
+    content_hash: "41b9ce653a75bd70712e2c8c3242944272cc5a848f19dbc6bf3ec332054d017f"
+    
+  - source_id: google-oauth-authentication
+    title: "Authentication with OAuth quickstart | Gemini API | Google AI for Developers"
+    author: Google
+    url: https://ai.google.dev/gemini-api/docs/oauth
+    url2: https://syntackle.com/blog/google-gemini-oauth-plugin-for-opencode-use-your-google-ai-subscription-instead-of-api-pricing/
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: documentation
+    freshness_ttl: 7 # days
+    proxy_used: false
+    content_hash: "981ea3763fb3bcdf94c4eb209c8307b786558ac486b1d8c11b9ad3de2f1e0474"
+    
+  - source_id: openclaw-anthropic-oauth
+    title: "Anthropic - OpenClaw"
+    author: OpenClaw
+    url: https://docs.openclaw.ai/providers/anthropic
+    url2: https://docs.openclaw.ai/concepts/oauth
+    date: 2026-04-19
+    fetched: 2026-04-19
+    type: documentation
+    freshness_ttl: 7 # days
+    proxy_used: false
+    content_hash: "66db98127731d36a5bb6b49a4af82ad53d4b806d4f487c21965d8f3afcd95cd9"
 
 history:
   - event: created
     date: 2026-04-19
     commit: f40f312b9db7b6291cf315f2ec5565374adcaba8
     sources: 5
+  - event: extended
+    date: 2026-04-19
+    commit: "--"
+    sources: 4  # openai-oauth-authentication, anthropic-oauth-policy, google-oauth-authentication, openclaw-anthropic-oauth

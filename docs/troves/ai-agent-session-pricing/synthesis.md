@@ -1,12 +1,82 @@
-# AI Agent Session Pricing: Synthesis and Key Findings
+# Synthesis: AI Agent Session Pricing, OAuth, and Subscription-Based Billing (2026)
 
-## Overview
+## Key Findings
 
-This trove synthesizes sources on **AI agent session pricing models**, focusing on **subscription-friendly, persistent session tools** that reduce or eliminate per-invocation costs. It covers both **commercial offerings** (e.g., Anthropic's Claude Managed Agents) and **open-source tools** (e.g., Hermes Agent, OpenClaw, CrewAI) that enable cost-efficient, session-based AI agent interactions.
+### 1. **OAuth-Based Login for Subscription Access**
+- **OpenAI**: Supports OAuth 2.1 for MCP apps, enabling users to authenticate and leverage their ChatGPT subscription benefits (e.g., avoiding per-token billing). Requires hosting protected resource metadata and publishing OAuth metadata from an authorization server.
+- **Anthropic**: Allows OAuth tokens for authentication within sanctioned integrations (e.g., Claude Code, OpenClaw). However, **OAuth tokens from consumer plans (Free, Pro, Max) are banned for third-party API access** to prevent bypassing per-token billing. Team and Enterprise plans are exempt.
+- **Google**: Supports OAuth 2.0 for Gemini API access, enabling users to authenticate with their Google AI subscription instead of per-token billing. Tools like `opencode-gemini-auth` facilitate this integration.
 
----
+### 2. **Provider-Specific Policies**
 
-## 1. Commercial Offerings: Session-Based Pricing
+#### OpenAI
+- **OAuth Flow**: ChatGPT acts as the client, performing dynamic client registration (DCR) and PKCE for secure token exchange.
+- **mTLS**: ChatGPT presents an OpenAI-managed client certificate for TLS connections. Verify the certificate chains to the OpenAI Connectors mTLS intermediate CA and has a SAN of `mtls.connectors.openai.com`.
+- **Token Verification**: MCP servers must verify access tokens on each request (signature, issuer, audience, scopes).
+
+#### Anthropic
+- **Consumer Plan Restrictions**: OAuth tokens from Free, Pro, and Max plans are throttled or rejected for API access outside of sanctioned integrations (e.g., Claude Code, OpenClaw).
+- **Team/Enterprise**: OAuth tokens are allowed for API access.
+- **API Keys**: The recommended path for programmatic access, especially for CI/CD and automation.
+- **Claude CLI**: OpenClaw and similar tools can reuse Claude CLI sessions (`claude -p`) for OAuth authentication, as this usage is sanctioned by Anthropic.
+
+#### Google
+- **OAuth for Subscriptions**: Users with a Google AI subscription can authenticate via OAuth to access Gemini models without per-token billing.
+- **API Keys**: Simpler for most use cases but do not leverage subscription benefits.
+- **Plugins**: Tools like `opencode-gemini-auth` enable OAuth-based authentication in third-party clients (e.g., Opencode).
+
+### 3. **Workarounds for Per-MTok Billing**
+
+#### OAuth-Based Authentication
+- **OpenAI**: Authenticate users via OAuth to leverage ChatGPT subscription benefits. Requires implementing the MCP authorization spec.
+- **Anthropic**: Use API keys for programmatic access. OAuth tokens are restricted to sanctioned integrations.
+- **Google**: Authenticate via OAuth to use Google AI subscriptions instead of per-token billing.
+
+#### Session-Based Tools
+- **OpenClaw**: Reuses Claude CLI sessions for OAuth authentication, enabling persistent sessions and avoiding per-token costs for sanctioned integrations.
+- **Opencode**: Supports OAuth plugins (e.g., `opencode-gemini-auth`) to authenticate with Google AI subscriptions.
+- **Claude Code**: Uses subscription OAuth credentials by default for Pro, Max, Team, and Enterprise users.
+
+#### Open-Source Tools
+- **Opencode**: Supports OAuth-based authentication for Google AI and other providers, enabling subscription-based access.
+- **OpenClaw**: Sanctioned for Anthropic OAuth integration, including Claude CLI reuse and API key authentication.
+
+### 4. **Cost Optimization Strategies**
+
+#### Token Minimization
+- **Tool Usage**: Minimize unnecessary tool calls (e.g., bash, file read, web fetch) to reduce token accumulation.
+- **Prompt Caching**: Use Anthropic’s prompt caching feature (`cacheRetention: "short"` or `"long"`) to reduce repeated token costs for API-key authenticated requests.
+
+#### Session Management
+- **Persistent Sessions**: Use tools like OpenClaw and Opencode to maintain persistent sessions, reducing the need for repeated authentication and token-heavy initialization.
+- **Sub-Agent Cost Control**: Monitor and limit the number and duration of sub-agents to avoid cost multipliers.
+
+#### Provider-Specific Optimizations
+- **Anthropic**:
+  - Use `service_tier: "auto"` (via `/fast on`) for priority processing on supported accounts.
+  - Enable `context1m: true` for 1M context windows (API keys only).
+- **Google**: Use OAuth to leverage Google AI subscriptions instead of per-token billing.
+- **OpenAI**: Implement OAuth to avoid per-token costs for MCP apps.
+
+## Points of Agreement
+- **OAuth as a Subscription Lever**: All providers (OpenAI, Anthropic, Google) support OAuth for authenticating users and leveraging subscription benefits, though Anthropic restricts OAuth tokens from consumer plans for API access.
+- **API Keys for Programmatic Access**: API keys are the recommended path for CI/CD, automation, and server-side billing control, especially for Anthropic.
+- **Session Persistence**: Tools like OpenClaw and Opencode enable persistent sessions, reducing token costs associated with repeated initialization.
+- **Cost Drivers**: Token accumulation from tool calls and sub-agents is a primary cost driver, outweighing session runtime costs in many cases.
+
+## Points of Disagreement or Uncertainty
+- **Anthropic’s Enforcement**: Anthropic’s policy on OAuth token usage is inconsistently enforced. While consumer plan tokens are technically "banned" for third-party API access, the enforcement mechanism (throttling vs. outright rejection) is unclear.
+- **OpenAI’s CMID**: Client Metadata Documents (CMID) are in development and not yet widely adopted, leaving dynamic client registration (DCR) as the primary method for OAuth client management.
+- **Google’s Subscription Flexibility**: It is unclear whether Google’s OAuth-based subscription access is limited to specific use cases (e.g., Opencode) or broadly applicable to all Gemini API integrations.
+
+## Gaps and Open Questions
+- **Anthropic’s Long-Term Policy**: Will Anthropic further restrict OAuth token usage or introduce new authentication methods for consumer plans?
+- **OpenAI’s CMID Adoption**: When will CMID be fully adopted, and how will it impact existing OAuth integrations?
+- **Google’s OAuth Scope**: Are there limitations on the types of applications that can use OAuth for subscription-based access?
+- **Cost Transparency**: How can users accurately predict and monitor token costs, especially in multi-agent or tool-heavy workflows?
+- **Provider-Specific Workarounds**: Are there additional tools or frameworks that abstract OAuth-based authentication for subscription access across multiple providers?
+
+## Commercial Offerings: Session-Based Pricing
 
 ### Claude Managed Agents (Anthropic)
 
@@ -25,20 +95,11 @@ This trove synthesizes sources on **AI agent session pricing models**, focusing 
 - Implement prompt caching to reduce costs for repeated context.
 - Monitor token consumption to identify optimization opportunities.
 
-**Rate Limits**:
-- Create endpoints: 60 RPM (org-level).
-- Read endpoints: 600 RPM (org-level).
-- Tier-based rate limits apply to underlying model calls.
-
-**Example Cost Calculation**:
-- 1-hour coding session (Opus 4.6, 50k input tokens, 15k output tokens): **$0.705**.
-- With prompt caching (40k cache reads): **$0.525**.
-
 **Sources**: [anthropic-managed-agents-pricing](sources/anthropic-managed-agents-pricing.md), [anthropic-platform-pricing](sources/anthropic-platform-pricing.md)
 
 ---
 
-## 2. Open-Source Tools: Persistent Sessions and Cost Efficiency
+## Open-Source Tools: Persistent Sessions and Cost Efficiency
 
 ### Key Tools
 
@@ -53,10 +114,6 @@ This trove synthesizes sources on **AI agent session pricing models**, focusing 
 | **Steel Browser**  | ✓                   | ✗           | Open source + model costs   | Browser automation, session-backed            |
 | **nanobot**        | ✓                   | ✗           | Open source + model costs   | Lightweight, MCP, multi-channel, skills       |
 
-**Multi-Agent Frameworks**:
-- **Maestro**: Multi-agent orchestration with parallel execution, persistent sessions, and security tiers.
-- **Swarms Framework**: Enterprise-grade multi-agent orchestration.
-
 **Cost Optimization Strategies for Open-Source Tools**:
 - **Serverless Persistence**: Use Daytona or Modal for bursty workloads. Environment hibernates when idle (costs nearly nothing).
 - **Self-Hosted**: Run on a $5 VPS or GPU cluster for steady usage.
@@ -67,54 +124,33 @@ This trove synthesizes sources on **AI agent session pricing models**, focusing 
 
 ---
 
-## 3. Managed Solutions: Hybrid and Cost-Efficient
+## Recommendations
 
-### Latenode
-- **Approach**: Hybrid (open-source flexibility + managed platform).
-- **Features**: Visual workflow design, built-in database, no separate data storage required.
-- **Use Case**: Teams seeking a balance between customization and ease of use.
-- **Cost**: Subscription-based (free tier available).
+### For Developers
+1. **Use OAuth for Subscription Access**:
+   - OpenAI: Implement OAuth 2.1 for MCP apps to leverage ChatGPT subscription benefits.
+   - Google: Use OAuth to authenticate with Google AI subscriptions for Gemini API access.
+   - Anthropic: Use API keys for programmatic access. Reserve OAuth for sanctioned integrations (e.g., Claude Code, OpenClaw).
 
-### Fastio
-- **Purpose**: MCP-native agent workflows with persistent workspaces.
-- **Features**: 50GB free storage, 5,000 monthly credits, 251 MCP tools, built-in RAG indexing.
-- **Use Case**: Agents requiring persistent storage and MCP tooling.
-- **Cost**: Freemium model (free tier + paid plans).
+2. **Minimize Token Costs**:
+   - Reduce unnecessary tool calls.
+   - Use prompt caching (Anthropic) and session persistence (OpenClaw, Opencode).
+   - Monitor token usage and sub-agent costs.
 
-**Sources**: [cost-efficient-tools](sources/cost-efficient-tools.md)
+3. **Leverage Open-Source Tools**:
+   - Use OpenClaw for Anthropic OAuth integration and session persistence.
+   - Use Opencode plugins (e.g., `opencode-gemini-auth`) for Google OAuth authentication.
 
----
+### For Providers
+1. **Clarify Policies**:
+   - Anthropic: Provide clearer guidance on OAuth token usage for consumer vs. Team/Enterprise plans.
+   - OpenAI: Accelerate CMID adoption to simplify OAuth client management.
+   - Google: Clarify the scope of OAuth-based subscription access for the Gemini API.
 
-## 4. Key Findings and Recommendations
+2. **Improve Cost Transparency**:
+   - Provide tools or APIs for real-time token cost monitoring and prediction.
+   - Offer granular breakdowns of token costs by tool usage, sub-agents, and session runtime.
 
-### Cost Efficiency
-
-- **Session-Based Pricing**: Claude Managed Agents' $0.08/session-hour runtime is cost-effective for long-running sessions, but token costs (especially from tool calls) dominate the bill.
-- **Open-Source Tools**: Eliminate licensing costs. Pay only for model/API usage and infrastructure (e.g., $5 VPS, serverless cloud).
-- **Managed Platforms**: Reduce operational overhead and infrastructure costs (e.g., Latenode, Fastio).
-
-### When to Use What
-
-| Use Case                          | Recommended Solution                          | Cost Structure               |
-|-----------------------------------|-----------------------------------------------|-----------------------------|
-| **Long-running, complex agents**  | Claude Managed Agents                        | Tokens + session runtime    |
-| **Personal automation**           | Hermes Agent, OpenClaw                       | Open source + model costs   |
-| **Multi-agent workflows**         | CrewAI, AutoGen, Maestro                     | Open source + model costs   |
-| **Teams, low ops overhead**       | Latenode, Fastio                             | Subscription/freemium       |
-| **Bursty, intermittent usage**    | Serverless (Daytona, Modal)                  | Pay-per-use                 |
-
-### Cost Optimization Best Practices
-
-1. **Model Selection**: Use smaller models (e.g., Haiku) for simple tasks; larger models (e.g., Opus) for complex reasoning.
-2. **Prompt Caching**: Reduce costs for repeated context (cache reads at 10% of base input price).
-3. **Tool Usage**: Minimize unnecessary tool calls to reduce token accumulation.
-4. **Infrastructure**: Use serverless for bursty workloads; self-hosted for steady usage.
-5. **Memory Management**: Implement cleanup routines for multi-agent setups.
-
-### Gaps and Open Questions
-
-- **Multi-Agent Coordination Costs**: Claude Managed Agents' research preview for multi-agent coordination may introduce additional costs (e.g., sub-agent session runtime).
-- **Open-Source Maturity**: While tools like Hermes Agent and OpenClaw are promising, they require technical expertise for self-hosting and maintenance.
-- **Managed Platform Costs**: Subscription-based managed platforms (e.g., Latenode, Fastio) may not be cost-effective for high-volume or long-running workloads.
-
-**Sources**: All trove sources
+3. **Support Open-Source Integrations**:
+   - Endorse and document sanctioned integrations (e.g., OpenClaw, Opencode) for OAuth-based authentication.
+   - Provide SDKs or libraries to simplify OAuth implementation for third-party tools.
