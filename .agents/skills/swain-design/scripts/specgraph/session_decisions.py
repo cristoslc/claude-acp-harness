@@ -4,6 +4,7 @@ Provides append-only logging and reading of operator decisions made during
 a session. The log lives at .agents/session-decisions.jsonl and is the
 durable store — SESSION-ROADMAP.md reads from it at generation time.
 """
+
 from __future__ import annotations
 
 import json

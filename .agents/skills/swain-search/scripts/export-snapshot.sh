@@ -126,4 +126,3 @@ print(json.dumps({
     "raw_path": sys.argv[4],
 }))
 PY
-

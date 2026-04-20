@@ -28,6 +28,7 @@ Features items can be either:
   - {"prose": "..."} for paragraph-style entries (major work)
   - {"text": "..."} for bullet-style entries (smaller items)
 """
+
 from __future__ import annotations
 
 import argparse
@@ -40,8 +41,11 @@ from pathlib import Path
 def main():
     parser = argparse.ArgumentParser(description="Render changelog from JSON + Jinja2")
     parser.add_argument("data", help="Path to JSON data file")
-    parser.add_argument("--template", default=None,
-                        help="Path to Jinja2 template (default: templates/changelog.md.j2)")
+    parser.add_argument(
+        "--template",
+        default=None,
+        help="Path to Jinja2 template (default: templates/changelog.md.j2)",
+    )
     args = parser.parse_args()
 
     try:

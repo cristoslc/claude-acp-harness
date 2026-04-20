@@ -189,7 +189,9 @@ def generate_security_briefing(
         sections.append("- Review code changes for common security anti-patterns")
         sections.append("- Validate all inputs and sanitize all outputs")
         sections.append("- Ensure no secrets or credentials are exposed")
-        sections.append("- Check for proper error handling that does not leak sensitive information")
+        sections.append(
+            "- Check for proper error handling that does not leak sensitive information"
+        )
         sections.append("")
 
     return "\n".join(sections).rstrip("\n") + "\n"

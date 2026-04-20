@@ -4,6 +4,7 @@
 Subsumes specgraph. Uses lenses to filter/annotate the vision-rooted tree.
 Falls through to specgraph CLI for low-level commands.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -26,18 +27,27 @@ from specgraph.graph import (
 from specgraph.materialize import materialize_children
 from specgraph.tree_renderer import render_vision_tree
 from specgraph.lenses import LENSES, RecommendLens, AttentionLens
-from specgraph.roadmap import render_roadmap, render_roadmap_markdown, collect_roadmap_items
+from specgraph.roadmap import (
+    render_roadmap,
+    render_roadmap_markdown,
+    collect_roadmap_items,
+)
 from specgraph import cli as specgraph_cli
 
 
 def _get_repo_root() -> str:
     """Find the git repository root."""
     import subprocess
+
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "--show-toplevel"],
-            stderr=subprocess.DEVNULL,
-        ).decode().strip()
+        return (
+            subprocess.check_output(
+                ["git", "rev-parse", "--show-toplevel"],
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
     except subprocess.CalledProcessError:
         return os.getcwd()
 
@@ -45,6 +55,7 @@ def _get_repo_root() -> str:
 def _ensure_cache(repo_root: str) -> dict:
     """Ensure graph cache is fresh, rebuild if needed."""
     from pathlib import Path
+
     cp = cache_path(repo_root)
     docs_dir = Path(repo_root) / "docs"
     if needs_rebuild(cp, docs_dir):
@@ -88,14 +99,32 @@ def _resolve_phase_filter(args) -> set[str] | None:
 
 
 # Lens commands that produce vision-rooted tree output
-_LENS_COMMANDS = {"default", "ready", "recommend", "attention", "debt",
-                  "unanchored", "status"}
+_LENS_COMMANDS = {
+    "default",
+    "ready",
+    "recommend",
+    "attention",
+    "debt",
+    "unanchored",
+    "status",
+}
 
 # Commands that pass through to specgraph CLI
-_PASSTHROUGH_COMMANDS = {"build", "xref", "blocks", "blocked-by", "tree",
-                         "deps", "neighbors", "scope", "impact", "edges",
-                         "mermaid", "next", "decision-debt"}
-
+_PASSTHROUGH_COMMANDS = {
+    "build",
+    "xref",
+    "blocks",
+    "blocked-by",
+    "tree",
+    "deps",
+    "neighbors",
+    "scope",
+    "impact",
+    "edges",
+    "mermaid",
+    "next",
+    "decision-debt",
+}
 
 
 def main():
@@ -112,32 +141,56 @@ def main():
         p = sub.add_parser(lens_name, help=f"{lens_name} lens")
         _add_tree_args(p)
         if lens_name == "recommend":
-            p.add_argument("--focus", type=str, default=None,
-                           help="Focus on a specific Vision ID")
+            p.add_argument(
+                "--focus", type=str, default=None, help="Focus on a specific Vision ID"
+            )
         if lens_name == "attention":
-            p.add_argument("--days", type=int, default=30,
-                           help="Days of git history to scan")
+            p.add_argument(
+                "--days", type=int, default=30, help="Days of git history to scan"
+            )
 
     # Roadmap command (custom rendering)
     roadmap_p = sub.add_parser("roadmap", help="Priority-sorted roadmap")
-    roadmap_p.add_argument("--format", type=str, default=None,
-                           choices=["mermaid-gantt", "mermaid-flowchart", "both"],
-                           help="Raw Mermaid to stdout (default: write ROADMAP.md)")
-    roadmap_p.add_argument("--scope", type=str, default=None,
-                           help="Generate scoped roadmap for a Vision or Initiative ID")
-    roadmap_p.add_argument("--json", action="store_true", dest="json_output",
-                           help="JSON output")
-    roadmap_p.add_argument("--cli", action="store_true", dest="cli_output",
-                           help="CLI-friendly plain text to stdout")
+    roadmap_p.add_argument(
+        "--format",
+        type=str,
+        default=None,
+        choices=["mermaid-gantt", "mermaid-flowchart", "both"],
+        help="Raw Mermaid to stdout (default: write ROADMAP.md)",
+    )
+    roadmap_p.add_argument(
+        "--scope",
+        type=str,
+        default=None,
+        help="Generate scoped roadmap for a Vision or Initiative ID",
+    )
+    roadmap_p.add_argument(
+        "--json", action="store_true", dest="json_output", help="JSON output"
+    )
+    roadmap_p.add_argument(
+        "--cli",
+        action="store_true",
+        dest="cli_output",
+        help="CLI-friendly plain text to stdout",
+    )
 
     # Session command (SPEC-118: SESSION-ROADMAP.md)
-    session_p = sub.add_parser("session", help="Generate SESSION-ROADMAP.md for a focus lane")
-    session_p.add_argument("--focus", type=str, default=None,
-                           help="Initiative or Vision ID to scope the session")
+    session_p = sub.add_parser(
+        "session", help="Generate SESSION-ROADMAP.md for a focus lane"
+    )
+    session_p.add_argument(
+        "--focus",
+        type=str,
+        default=None,
+        help="Initiative or Vision ID to scope the session",
+    )
 
-    projection_p = sub.add_parser("projection", help="Machine-readable hierarchy projection")
-    projection_p.add_argument("--json", action="store_true", dest="json_output",
-                              help="JSON output")
+    projection_p = sub.add_parser(
+        "projection", help="Machine-readable hierarchy projection"
+    )
+    projection_p.add_argument(
+        "--json", action="store_true", dest="json_output", help="JSON output"
+    )
 
     # Passthrough commands (delegate to specgraph CLI)
     for cmd in _PASSTHROUGH_COMMANDS:
@@ -164,12 +217,16 @@ def main():
         data = build_graph(Path(repo_root))
         cp = cache_path(repo_root)
         write_cache(data, cp)
-        skipped = materialize_children(Path(repo_root), build_projection(data["nodes"], data["edges"]))
+        skipped = materialize_children(
+            Path(repo_root), build_projection(data["nodes"], data["edges"])
+        )
         print(f"Graph built: {cp}")
         print(f"  Nodes: {len(data['nodes'])}")
         print(f"  Edges: {len(data['edges'])}")
         if skipped:
-            print(f"  Skipped {len(skipped)} flat-file artifact(s) — run swain-doctor --fix-flat-artifacts to migrate:")
+            print(
+                f"  Skipped {len(skipped)} flat-file artifact(s) — run swain-doctor --fix-flat-artifacts to migrate:"
+            )
             for aid in skipped[:10]:
                 print(f"    {aid}")
             if len(skipped) > 10:
@@ -196,6 +253,7 @@ def main():
         if scope:
             # Scoped mode: write slice to artifact folder
             from specgraph.roadmap import _write_scoped_slice
+
             result = _write_scoped_slice(scope, nodes, edges, repo_root)
             if result:
                 print(f"Wrote {result}")
@@ -204,11 +262,13 @@ def main():
                 sys.exit(1)
         elif cli_out:
             from specgraph.roadmap import render_roadmap_cli
+
             items = collect_roadmap_items(nodes, edges)
             print(render_roadmap_cli(items))
         elif fmt or json_out:
-            output = render_roadmap(nodes, edges, fmt=fmt or "mermaid-gantt",
-                                    json_output=json_out)
+            output = render_roadmap(
+                nodes, edges, fmt=fmt or "mermaid-gantt", json_output=json_out
+            )
             print(output)
         else:
             # Default: write ROADMAP.md + all per-artifact slices
@@ -219,6 +279,7 @@ def main():
                 f.write(md)
             print(f"Wrote {roadmap_path}")
             from specgraph.roadmap import _write_all_slices
+
             count = _write_all_slices(nodes, edges, repo_root)
             if count:
                 print(f"Wrote {count} per-artifact roadmap slice(s)")
@@ -233,8 +294,10 @@ def main():
         focus = getattr(args, "focus", None) or _read_focus_lane(repo_root)
 
         if not focus:
-            print("Error: --focus is required (or set a focus lane via swain-session)",
-                  file=sys.stderr)
+            print(
+                "Error: --focus is required (or set a focus lane via swain-session)",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
         if focus not in nodes:
@@ -242,6 +305,7 @@ def main():
             sys.exit(1)
 
         from specgraph.session_roadmap import render_session_roadmap
+
         md = render_session_roadmap(focus, nodes, edges, repo_root=repo_root)
         session_path = os.path.join(repo_root, "SESSION-ROADMAP.md")
         with open(session_path, "w", encoding="utf-8") as f:
@@ -326,21 +390,31 @@ def main():
 
 def _add_tree_args(parser):
     """Add common tree display arguments."""
-    parser.add_argument("--depth", type=int, default=None,
-                        help="Tree depth (2=strategic, 4=execution)")
-    parser.add_argument("--detail", action="store_const", const=4,
-                        dest="depth",
-                        help="Alias for --depth 4")
-    parser.add_argument("--phase", type=str, default=None,
-                        help="Comma-separated phases to include")
-    parser.add_argument("--hide-terminal", action="store_true",
-                        help="Exclude terminal-phase artifacts")
-    parser.add_argument("--flat", action="store_true",
-                        help="Flat list output (no tree)")
-    parser.add_argument("--json", action="store_true", dest="json_output",
-                        help="JSON output")
-    parser.add_argument("--ids", action="store_true",
-                        help="Show artifact IDs alongside titles")
+    parser.add_argument(
+        "--depth", type=int, default=None, help="Tree depth (2=strategic, 4=execution)"
+    )
+    parser.add_argument(
+        "--detail",
+        action="store_const",
+        const=4,
+        dest="depth",
+        help="Alias for --depth 4",
+    )
+    parser.add_argument(
+        "--phase", type=str, default=None, help="Comma-separated phases to include"
+    )
+    parser.add_argument(
+        "--hide-terminal", action="store_true", help="Exclude terminal-phase artifacts"
+    )
+    parser.add_argument(
+        "--flat", action="store_true", help="Flat list output (no tree)"
+    )
+    parser.add_argument(
+        "--json", action="store_true", dest="json_output", help="JSON output"
+    )
+    parser.add_argument(
+        "--ids", action="store_true", help="Show artifact IDs alongside titles"
+    )
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@
 Validates that collect_roadmap_items() returns fully-resolved items with all
 derived fields, and that all renderers consume those fields consistently.
 """
+
 from __future__ import annotations
 
 import sys
@@ -85,11 +86,25 @@ def _make_graph():
 
 
 REQUIRED_FIELDS = {
-    "id", "title", "type", "score", "weight",
-    "children_total", "children_complete", "depends_on",
-    "group", "group_title", "vision_id", "status",
-    "quadrant", "quadrant_label", "chart_x", "chart_y",
-    "display_score", "short_id", "operator_decision",
+    "id",
+    "title",
+    "type",
+    "score",
+    "weight",
+    "children_total",
+    "children_complete",
+    "depends_on",
+    "group",
+    "group_title",
+    "vision_id",
+    "status",
+    "quadrant",
+    "quadrant_label",
+    "chart_x",
+    "chart_y",
+    "display_score",
+    "short_id",
+    "operator_decision",
 }
 
 
@@ -133,9 +148,9 @@ def test_same_urgency_gets_different_chart_x():
     items = collect_roadmap_items(nodes, edges)
     epics = [i for i in items if i["type"] == "EPIC"]
     positions = [(i["chart_x"], i["chart_y"]) for i in epics]
-    assert len(set(positions)) == len(positions), (
-        f"Duplicate (chart_x, chart_y) positions among EPICs: {positions}"
-    )
+    assert len(set(positions)) == len(
+        positions
+    ), f"Duplicate (chart_x, chart_y) positions among EPICs: {positions}"
 
 
 def test_legend_ordering_matches_chart():
@@ -213,7 +228,9 @@ def test_initiative_counts_direct_child_specs():
         "title": "Direct Initiative Spec",
         "status": "Complete",
     }
-    edges.append({"from": "SPEC-DIRECT", "to": "INITIATIVE-001", "type": "parent-initiative"})
+    edges.append(
+        {"from": "SPEC-DIRECT", "to": "INITIATIVE-001", "type": "parent-initiative"}
+    )
 
     items = collect_roadmap_items(nodes, edges)
     init_item = next(i for i in items if i["id"] == "INITIATIVE-001")
@@ -230,11 +247,15 @@ def test_initiative_direct_child_spec_appears_as_item():
         "title": "Direct Initiative Spec",
         "status": "Active",
     }
-    edges.append({"from": "SPEC-DIRECT", "to": "INITIATIVE-001", "type": "parent-initiative"})
+    edges.append(
+        {"from": "SPEC-DIRECT", "to": "INITIATIVE-001", "type": "parent-initiative"}
+    )
 
     items = collect_roadmap_items(nodes, edges)
     item_ids = {i["id"] for i in items}
-    assert "SPEC-DIRECT" in item_ids, "Direct-child SPEC should appear as a roadmap item"
+    assert (
+        "SPEC-DIRECT" in item_ids
+    ), "Direct-child SPEC should appear as a roadmap item"
     spec_item = next(i for i in items if i["id"] == "SPEC-DIRECT")
     assert spec_item["group"] == "INITIATIVE-001"
     assert spec_item["type"] == "SPEC"
@@ -248,7 +269,13 @@ def test_initiative_counts_active_direct_child_spec():
         "title": "Active Direct Spec",
         "status": "Active",
     }
-    edges.append({"from": "SPEC-ACTIVE-DIRECT", "to": "INITIATIVE-001", "type": "parent-initiative"})
+    edges.append(
+        {
+            "from": "SPEC-ACTIVE-DIRECT",
+            "to": "INITIATIVE-001",
+            "type": "parent-initiative",
+        }
+    )
 
     items = collect_roadmap_items(nodes, edges)
     init_item = next(i for i in items if i["id"] == "INITIATIVE-001")

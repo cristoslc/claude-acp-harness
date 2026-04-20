@@ -60,26 +60,32 @@ def test_chart_projection_outputs_machine_readable_records(tmp_path):
 
     assert result.returncode == 0, result.stderr
     data = json.loads(result.stdout)
-    assert data == [{
-        "artifact": "VISION-001",
-        "type": "VISION",
-        "status": "Active",
-        "canonical_file": "docs/vision/Active/(VISION-001)-Root/(VISION-001)-Root.md",
-        "canonical_path": "docs/vision/Active/(VISION-001)-Root",
-        "direct_parent": None,
-        "placement_state": "root",
-        "linked_artifacts": [],
-        "depends_on_artifacts": [],
-    }]
+    assert data == [
+        {
+            "artifact": "VISION-001",
+            "type": "VISION",
+            "status": "Active",
+            "canonical_file": "docs/vision/Active/(VISION-001)-Root/(VISION-001)-Root.md",
+            "canonical_path": "docs/vision/Active/(VISION-001)-Root",
+            "direct_parent": None,
+            "placement_state": "root",
+            "linked_artifacts": [],
+            "depends_on_artifacts": [],
+        }
+    ]
 
 
 def test_chart_build_materializes_child_view(tmp_path):
     """chart build should rebuild the graph and materialize direct child links."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-    subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "init"], cwd=repo_root, check=True, capture_output=True, text=True
+    )
     vision_dir = repo_root / "docs" / "vision" / "Active" / "(VISION-001)-Root"
-    initiative_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    initiative_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    )
     vision_dir.mkdir(parents=True)
     initiative_dir.mkdir(parents=True)
     (vision_dir / "(VISION-001)-Root.md").write_text(
@@ -112,7 +118,9 @@ def test_chart_build_materializes_child_view(tmp_path):
 def test_chart_build_fails_on_duplicate_artifact_ids(tmp_path):
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
-    subprocess.run(["git", "init"], cwd=repo_root, check=True, capture_output=True, text=True)
+    subprocess.run(
+        ["git", "init"], cwd=repo_root, check=True, capture_output=True, text=True
+    )
     first = repo_root / "docs" / "spec" / "Active" / "(SPEC-001)-First"
     second = repo_root / "docs" / "spec" / "Proposed" / "(SPEC-001)-Second"
     first.mkdir(parents=True)

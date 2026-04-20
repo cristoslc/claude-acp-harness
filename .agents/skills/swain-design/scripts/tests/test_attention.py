@@ -7,7 +7,11 @@ from datetime import datetime, timezone
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from specgraph.attention import parse_git_log_entry, attribute_to_vision, compute_attention
+from specgraph.attention import (
+    parse_git_log_entry,
+    attribute_to_vision,
+    compute_attention,
+)
 
 
 class TestParseGitLogEntry:

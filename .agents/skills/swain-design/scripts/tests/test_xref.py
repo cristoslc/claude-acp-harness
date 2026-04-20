@@ -6,12 +6,17 @@ import sys
 import unittest.mock
 from pathlib import Path
 
-import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from specgraph.xref import collect_frontmatter_ids, compute_discrepancies, compute_xref, scan_body, check_reciprocal_edges
+from specgraph.xref import (
+    collect_frontmatter_ids,
+    compute_discrepancies,
+    compute_xref,
+    scan_body,
+    check_reciprocal_edges,
+)
 
 
 class TestScanBodyBasic:
@@ -587,6 +592,7 @@ class TestCmdXrefJsonFlag:
 def test_collect_frontmatter_ids_includes_parent_initiative():
     """parent-initiative scalar is collected by collect_frontmatter_ids."""
     from specgraph.xref import collect_frontmatter_ids
+
     fm = {"parent-initiative": "INITIATIVE-001"}
     ids = collect_frontmatter_ids(fm)
     assert "INITIATIVE-001" in ids
@@ -595,6 +601,7 @@ def test_collect_frontmatter_ids_includes_parent_initiative():
 def test_spec_with_parent_initiative_no_parent_epic_is_valid():
     """A spec can have parent-initiative without parent-epic (small work path)."""
     from specgraph.xref import collect_frontmatter_ids
+
     fm = {"parent-initiative": "INITIATIVE-001", "title": "Fix bug"}
     ids = collect_frontmatter_ids(fm)
     assert "INITIATIVE-001" in ids

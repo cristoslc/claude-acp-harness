@@ -1,9 +1,9 @@
 """Tests for sort-order frontmatter field in specgraph."""
+
 from __future__ import annotations
 
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 # Ensure the specgraph package is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -15,6 +15,7 @@ from specgraph.roadmap import collect_roadmap_items
 # ---------------------------------------------------------------------------
 # Helpers to build minimal node/edge dicts
 # ---------------------------------------------------------------------------
+
 
 def _make_nodes(*specs):
     """Build a nodes dict from (id, sort_order, status, type) tuples."""
@@ -36,6 +37,7 @@ def _make_nodes(*specs):
 # ---------------------------------------------------------------------------
 # graph.py: build_graph parses sort-order
 # ---------------------------------------------------------------------------
+
 
 def test_graph_parses_sort_order():
     """build_graph stores sort_order on each node."""
@@ -78,6 +80,7 @@ def test_graph_invalid_sort_order_becomes_zero():
 # priority.py: higher sort_order wins among same-score siblings
 # ---------------------------------------------------------------------------
 
+
 def test_priority_higher_sort_order_sorts_first():
     """Items with higher sort_order appear before siblings with the same score."""
     nodes = _make_nodes(
@@ -108,7 +111,7 @@ def test_priority_same_sort_order_falls_back_to_id():
 def test_priority_sort_order_does_not_override_score():
     """A higher sort_order must NOT elevate a low-score item above a high-score item."""
     nodes = _make_nodes(
-        ("SPEC-HIGH", 0, "Active", "SPEC"),   # will be unblocked by SPEC-DEP
+        ("SPEC-HIGH", 0, "Active", "SPEC"),  # will be unblocked by SPEC-DEP
         ("SPEC-LOW", 999, "Active", "SPEC"),  # high sort_order but no unblocks
         ("SPEC-DEP", 0, "Active", "SPEC"),
     )
@@ -123,6 +126,7 @@ def test_priority_sort_order_does_not_override_score():
 # ---------------------------------------------------------------------------
 # roadmap.py: sort_order included in items and respected in sort
 # ---------------------------------------------------------------------------
+
 
 def test_roadmap_sort_order_field_present():
     """collect_roadmap_items includes sort_order in each returned item."""

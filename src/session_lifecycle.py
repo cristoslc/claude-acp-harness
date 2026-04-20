@@ -1,12 +1,10 @@
 import asyncio
-import enum
 import logging
 import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Optional
 
-from pydantic import BaseModel, Field
 
 from config import AuthMethod, SessionState, detect_auth_method
 

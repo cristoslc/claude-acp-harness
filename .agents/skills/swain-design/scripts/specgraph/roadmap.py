@@ -14,6 +14,7 @@ Ordering: by computed priority score descending, then artifact ID (tiebreaker).
 Leaf level: Epic (SPECs are not rendered, but progress ratios are shown).
 Direct children of Initiatives (SPECs, Spikes) also count toward progress.
 """
+
 from __future__ import annotations
 
 import os
@@ -25,20 +26,21 @@ from .queries import (
 from .priority import (
     resolve_vision_weight,
     _compute_unblock_count,
-    _is_decision_type,
     rank_recommendations,
-    compute_decision_debt,
 )
 
 try:
     from jinja2 import Environment, FileSystemLoader
+
     _HAS_JINJA = True
 except ImportError:
     _HAS_JINJA = False
 
 
 def _jinja_env() -> "Environment":
-    template_dir = os.path.join(os.path.dirname(__file__), '..', '..', 'templates', 'roadmap')
+    template_dir = os.path.join(
+        os.path.dirname(__file__), "..", "..", "templates", "roadmap"
+    )
     return Environment(
         loader=FileSystemLoader(template_dir),
         keep_trailing_newline=True,
@@ -63,6 +65,7 @@ QUADRANT_ORDER = ("do", "schedule", "delegate", "evaluate")
 # ---------------------------------------------------------------------------
 # Data collection
 # ---------------------------------------------------------------------------
+
 
 def _get_children(parent_id: str, edges: list[dict]) -> list[str]:
     children = []
@@ -180,21 +183,23 @@ def collect_roadmap_items(
                     if target_node.get("type", "").upper() in _CONTAINER_TYPES:
                         depends_on.append(target)
 
-        items.append({
-            "id": aid,
-            "title": node.get("title", aid),
-            "type": atype,
-            "score": score,
-            "weight": weight,
-            "children_total": total,
-            "children_complete": complete,
-            "depends_on": sorted(depends_on),
-            "group": group,
-            "group_title": group_title,
-            "vision_id": vision,
-            "status": node.get("status", ""),
-            "sort_order": node.get("sort_order", 0),
-        })
+        items.append(
+            {
+                "id": aid,
+                "title": node.get("title", aid),
+                "type": atype,
+                "score": score,
+                "weight": weight,
+                "children_total": total,
+                "children_complete": complete,
+                "depends_on": sorted(depends_on),
+                "group": group,
+                "group_title": group_title,
+                "vision_id": vision,
+                "status": node.get("status", ""),
+                "sort_order": node.get("sort_order", 0),
+            }
+        )
 
     # Second pass: emit unresolved direct-child SPECs/Spikes as items
     # grouped under their parent Initiative (SPEC-115)
@@ -215,21 +220,23 @@ def collect_roadmap_items(
                 if target and not _node_is_resolved(target, nodes):
                     depends_on.append(target)
 
-        items.append({
-            "id": child_id,
-            "title": child_node.get("title", child_id),
-            "type": child_node.get("type", "").upper(),
-            "score": score,
-            "weight": weight,
-            "children_total": 0,
-            "children_complete": 0,
-            "depends_on": sorted(depends_on),
-            "group": parent_init_id,
-            "group_title": init_node.get("title", parent_init_id),
-            "vision_id": vision,
-            "status": child_node.get("status", ""),
-            "sort_order": child_node.get("sort_order", 0),
-        })
+        items.append(
+            {
+                "id": child_id,
+                "title": child_node.get("title", child_id),
+                "type": child_node.get("type", "").upper(),
+                "score": score,
+                "weight": weight,
+                "children_total": 0,
+                "children_complete": 0,
+                "depends_on": sorted(depends_on),
+                "group": parent_init_id,
+                "group_title": init_node.get("title", parent_init_id),
+                "vision_id": vision,
+                "status": child_node.get("status", ""),
+                "sort_order": child_node.get("sort_order", 0),
+            }
+        )
 
     items.sort(key=lambda x: (-x["score"], -x.get("sort_order", 0), x["id"]))
 
@@ -269,13 +276,16 @@ def collect_roadmap_items(
         if item["type"] == "EPIC":
             base_x = _compute_urgency(item)
             tier_name = (
-                "high" if item["weight"] >= 3
+                "high"
+                if item["weight"] >= 3
                 else ("medium" if item["weight"] >= 2 else "low")
             )
             y_lo, y_hi = tier_ranges[tier_name]
             n = tier_size[tier_name]
             idx = tier_index[item["id"]]
-            base_y = y_lo + (y_hi - y_lo) * idx / (n - 1) if n > 1 else (y_lo + y_hi) / 2
+            base_y = (
+                y_lo + (y_hi - y_lo) * idx / (n - 1) if n > 1 else (y_lo + y_hi) / 2
+            )
             item["chart_x"] = base_x
             item["chart_y"] = base_y
         else:
@@ -286,6 +296,7 @@ def collect_roadmap_items(
     # When multiple EPICs land on the same X, alternate them left/right
     # so labels don't stack into an illegible vertical column.
     from collections import defaultdict
+
     x_groups: dict[float, list[dict]] = defaultdict(list)
     for item in items:
         if item["type"] == "EPIC":
@@ -315,6 +326,7 @@ def collect_roadmap_items(
 # Eisenhower classification
 # ---------------------------------------------------------------------------
 
+
 def _classify_eisenhower(item: dict) -> str:
     important = item["weight"] >= 3
     urgent = item["status"] in _ACTIVE_STATUSES or item["score"] > 0
@@ -343,7 +355,10 @@ def _operator_decision(item: dict) -> str:
         return "activate or drop"
     if item["children_total"] == 0:
         return "needs decomposition"
-    if item["children_complete"] == item["children_total"] and item["children_total"] > 0:
+    if (
+        item["children_complete"] == item["children_total"]
+        and item["children_total"] > 0
+    ):
         return "ready to complete"
     return ""
 
@@ -351,6 +366,7 @@ def _operator_decision(item: dict) -> str:
 # ---------------------------------------------------------------------------
 # Mermaid helpers
 # ---------------------------------------------------------------------------
+
 
 def _safe_mermaid_id(artifact_id: str) -> str:
     return artifact_id.replace("-", "_")
@@ -363,6 +379,7 @@ def _escape_mermaid_label(text: str) -> str:
 # ---------------------------------------------------------------------------
 # 1. Quadrant chart — scatter plot with data-driven positions
 # ---------------------------------------------------------------------------
+
 
 def _compute_urgency(item: dict) -> float:
     """Map item state to urgency score 0.0–1.0."""
@@ -377,7 +394,6 @@ def _compute_urgency(item: dict) -> float:
         return 0.55 + min(unblocks * 0.05, 0.15)
     else:
         return 0.15
-
 
 
 def _short_id(artifact_id: str) -> str:
@@ -399,12 +415,14 @@ def render_quadrant_chart(items: list[dict]) -> tuple[str, list[dict]]:
 
     legend_items: list[dict] = []
     for item in epics:
-        legend_items.append({
-            "short_id": item["short_id"],
-            "id": item["id"],
-            "title": item["title"],
-            "quadrant": item["quadrant_label"],
-        })
+        legend_items.append(
+            {
+                "short_id": item["short_id"],
+                "id": item["id"],
+                "title": item["title"],
+                "quadrant": item["quadrant_label"],
+            }
+        )
 
     if _HAS_JINJA:
         env = _jinja_env()
@@ -423,7 +441,9 @@ def render_quadrant_chart(items: list[dict]) -> tuple[str, list[dict]]:
             "    quadrant-4 In Progress",
         ]
         for item in epics:
-            lines.append(f"    {item['short_id']}: [{item['chart_x']:.2f}, {item['chart_y']:.2f}]")
+            lines.append(
+                f"    {item['short_id']}: [{item['chart_x']:.2f}, {item['chart_y']:.2f}]"
+            )
         mermaid_src = "\n".join(lines)
 
     return mermaid_src, legend_items
@@ -449,7 +469,8 @@ def _render_quadrant_png(mermaid_source: str, repo_root: str) -> str | None:
     try:
         subprocess.run(
             ["mmdc", "-i", mmd_path, "-o", png_path, "-w", "800", "-b", "transparent"],
-            capture_output=True, timeout=30,
+            capture_output=True,
+            timeout=30,
         )
         return "assets/quadrant.png" if os.path.isfile(png_path) else None
     except (subprocess.TimeoutExpired, OSError):
@@ -461,6 +482,7 @@ def _render_quadrant_png(mermaid_source: str, repo_root: str) -> str | None:
 # ---------------------------------------------------------------------------
 # 2. Staggered Gantt — priority rank determines position
 # ---------------------------------------------------------------------------
+
 
 def render_gantt(items: list[dict], nodes: dict) -> str:
     """Render a Mermaid Gantt chart staggered by priority.
@@ -523,7 +545,8 @@ def render_gantt(items: list[dict], nodes: dict) -> str:
                     marker = ""
 
                 dep_aliases = [
-                    task_alias[d] for d in item["depends_on"]
+                    task_alias[d]
+                    for d in item["depends_on"]
                     if d in task_alias and d != item["id"]
                 ]
                 if dep_aliases:
@@ -532,13 +555,15 @@ def render_gantt(items: list[dict], nodes: dict) -> str:
                     day = task_start_day[item["id"]]
                     start = f"2026-01-{day:02d}"
 
-                tasks.append({
-                    "label": label,
-                    "progress": progress,
-                    "marker": marker,
-                    "alias": alias,
-                    "start": start,
-                })
+                tasks.append(
+                    {
+                        "label": label,
+                        "progress": progress,
+                        "marker": marker,
+                        "alias": alias,
+                        "start": start,
+                    }
+                )
             quadrant_sections.append({"title": title, "tasks": tasks})
 
         env = _jinja_env()
@@ -579,7 +604,8 @@ def render_gantt(items: list[dict], nodes: dict) -> str:
 
                 # Dependencies override start position
                 dep_aliases = [
-                    task_alias[d] for d in item["depends_on"]
+                    task_alias[d]
+                    for d in item["depends_on"]
                     if d in task_alias and d != item["id"]
                 ]
                 if dep_aliases:
@@ -596,6 +622,7 @@ def render_gantt(items: list[dict], nodes: dict) -> str:
 # ---------------------------------------------------------------------------
 # 3. Dependency graph — only connected nodes, cross-boundary annotations
 # ---------------------------------------------------------------------------
+
 
 def render_dependency_graph(items: list[dict], nodes: dict) -> str | None:
     """Render a Mermaid flowchart showing only items with dependencies.
@@ -619,8 +646,12 @@ def render_dependency_graph(items: list[dict], nodes: dict) -> str | None:
     # Quadrant classification for cross-boundary detection
     q_rank = {"do": 0, "schedule": 1, "delegate": 2, "evaluate": 3}
 
-    qclass = {"do": "doFirst", "schedule": "scheduled",
-              "delegate": "inProgress", "evaluate": "backlog"}
+    qclass = {
+        "do": "doFirst",
+        "schedule": "scheduled",
+        "delegate": "inProgress",
+        "evaluate": "backlog",
+    }
 
     # Group involved nodes by initiative
     by_initiative: dict[str, list[dict]] = {}
@@ -653,37 +684,49 @@ def render_dependency_graph(items: list[dict], nodes: dict) -> str | None:
                 if dst_rank > src_rank:
                     cross_boundary = True
 
-            jinja_edges.append({"src": src, "dst": dst, "cross_boundary": cross_boundary})
+            jinja_edges.append(
+                {"src": src, "dst": dst, "cross_boundary": cross_boundary}
+            )
 
         subgraph_data = []
         if use_subgraphs:
             for init_id, init_items in sorted(by_initiative.items()):
                 init_node = nodes.get(init_id, {})
-                subgraph_data.append({
-                    "id": _safe_mermaid_id(init_id),
-                    "title": _escape_mermaid_label(init_node.get("title", init_id)),
-                    "nodes": [{
-                        "eid": _safe_mermaid_id(item["id"]),
-                        "elabel": _escape_mermaid_label(item["title"]),
-                        "cls": qclass[item["quadrant"]],
-                    } for item in init_items],
-                })
+                subgraph_data.append(
+                    {
+                        "id": _safe_mermaid_id(init_id),
+                        "title": _escape_mermaid_label(init_node.get("title", init_id)),
+                        "nodes": [
+                            {
+                                "eid": _safe_mermaid_id(item["id"]),
+                                "elabel": _escape_mermaid_label(item["title"]),
+                                "cls": qclass[item["quadrant"]],
+                            }
+                            for item in init_items
+                        ],
+                    }
+                )
 
-        standalone_data = [{
-            "eid": _safe_mermaid_id(item["id"]),
-            "elabel": _escape_mermaid_label(item["title"]),
-            "cls": qclass[item["quadrant"]],
-        } for item in standalone_nodes]
+        standalone_data = [
+            {
+                "eid": _safe_mermaid_id(item["id"]),
+                "elabel": _escape_mermaid_label(item["title"]),
+                "cls": qclass[item["quadrant"]],
+            }
+            for item in standalone_nodes
+        ]
 
         # If not using subgraphs, put all nodes in standalone
         if not use_subgraphs:
             for init_items in by_initiative.values():
                 for item in init_items:
-                    standalone_data.append({
-                        "eid": _safe_mermaid_id(item["id"]),
-                        "elabel": _escape_mermaid_label(item["title"]),
-                        "cls": qclass[item["quadrant"]],
-                    })
+                    standalone_data.append(
+                        {
+                            "eid": _safe_mermaid_id(item["id"]),
+                            "elabel": _escape_mermaid_label(item["title"]),
+                            "cls": qclass[item["quadrant"]],
+                        }
+                    )
             standalone_data.sort(key=lambda n: n["eid"])
 
         env = _jinja_env()
@@ -759,6 +802,7 @@ def render_dependency_graph(items: list[dict], nodes: dict) -> str | None:
 # Markdown helpers
 # ---------------------------------------------------------------------------
 
+
 def _md_link(artifact_id: str, title: str, nodes: dict) -> str:
     node = nodes.get(artifact_id, {})
     filepath = node.get("file", "")
@@ -770,6 +814,7 @@ def _md_link(artifact_id: str, title: str, nodes: dict) -> str:
 # ---------------------------------------------------------------------------
 # 4. Eisenhower table — detail view with decision callouts
 # ---------------------------------------------------------------------------
+
 
 def render_eisenhower_table(items: list[dict], nodes: dict) -> str:
     """Render Eisenhower quadrant tables with initiative-first grouping.
@@ -786,11 +831,13 @@ def render_eisenhower_table(items: list[dict], nodes: dict) -> str:
             title, subtitle = QUADRANT_LABELS[qkey]
 
             if not qitems:
-                quadrant_data.append({
-                    "title": title,
-                    "subtitle": subtitle,
-                    "groups": [],
-                })
+                quadrant_data.append(
+                    {
+                        "title": title,
+                        "subtitle": subtitle,
+                        "groups": [],
+                    }
+                )
                 continue
 
             by_init: dict[str, list[dict]] = {}
@@ -823,20 +870,24 @@ def render_eisenhower_table(items: list[dict], nodes: dict) -> str:
                     else:
                         init_cell = ""
 
-                    rows.append({
-                        "init_cell": init_cell,
-                        "epic_link": epic_link,
-                        "progress": progress,
-                        "unblocks": unblocks,
-                        "needs": needs,
-                    })
+                    rows.append(
+                        {
+                            "init_cell": init_cell,
+                            "epic_link": epic_link,
+                            "progress": progress,
+                            "unblocks": unblocks,
+                            "needs": needs,
+                        }
+                    )
                 groups.append({"rows": rows})
 
-            quadrant_data.append({
-                "title": title,
-                "subtitle": subtitle,
-                "groups": groups,
-            })
+            quadrant_data.append(
+                {
+                    "title": title,
+                    "subtitle": subtitle,
+                    "groups": groups,
+                }
+            )
 
         env = _jinja_env()
         tmpl = env.get_template("eisenhower.md.j2")
@@ -901,7 +952,10 @@ def render_eisenhower_table(items: list[dict], nodes: dict) -> str:
 # Markdown assembly
 # ---------------------------------------------------------------------------
 
-def _render_legend_single_row(legend_items: list[dict], nodes: dict, all_items: list[dict]) -> str:
+
+def _render_legend_single_row(
+    legend_items: list[dict], nodes: dict, all_items: list[dict]
+) -> str:
     """Render legend as a single-line string for one markdown table cell.
 
     Groups by quadrant, then by initiative. Double <br> between quadrants
@@ -1060,11 +1114,15 @@ def render_recommendation_section(
     top = recommendations[0]
     node = nodes.get(top["id"], {})
     title = node.get("title", top["id"])
-    weight_label = {3: "high", 2: "medium", 1: "low"}.get(top["vision_weight"], "medium")
+    weight_label = {3: "high", 2: "medium", 1: "low"}.get(
+        top["vision_weight"], "medium"
+    )
 
     rationale_parts = []
     if top["unblock_count"] > 0:
-        rationale_parts.append(f"unblocks {top['unblock_count']} item{'s' if top['unblock_count'] != 1 else ''}")
+        rationale_parts.append(
+            f"unblocks {top['unblock_count']} item{'s' if top['unblock_count'] != 1 else ''}"
+        )
     rationale_parts.append(f"weight: {weight_label}")
     if top["score"] > 0:
         rationale_parts.append(f"score: {top['score']}")
@@ -1079,7 +1137,9 @@ def render_recommendation_section(
     return "\n".join(lines)
 
 
-_AUTO_GENERATED_MARKER = "<!-- Auto-generated by chart.sh roadmap --scope. Do not edit. -->"
+_AUTO_GENERATED_MARKER = (
+    "<!-- Auto-generated by chart.sh roadmap --scope. Do not edit. -->"
+)
 
 
 def _get_recent_commits(
@@ -1100,11 +1160,17 @@ def _get_recent_commits(
         try:
             result = _sp.run(
                 [
-                    "git", "log", "--all",
-                    f"--grep={aid}", f"-{limit}",
+                    "git",
+                    "log",
+                    "--all",
+                    f"--grep={aid}",
+                    f"-{limit}",
                     "--format=%h\t%s\t%aI\t%ai",
                 ],
-                capture_output=True, text=True, cwd=repo_root, timeout=10,
+                capture_output=True,
+                text=True,
+                cwd=repo_root,
+                timeout=10,
             )
             for line in result.stdout.strip().splitlines():
                 if not line:
@@ -1118,14 +1184,18 @@ def _get_recent_commits(
                     # Parse "2026-03-21 14:32:05 -0600" into date and time
                     dt_parts = date_human.split(" ", 2)
                     c_date = dt_parts[0] if len(dt_parts) >= 1 else ""
-                    c_time = dt_parts[1].rsplit(":", 1)[0] if len(dt_parts) >= 2 else ""  # drop seconds
-                    commits.append({
-                        "hash": h,
-                        "message": msg,
-                        "date": date_iso,
-                        "c_date": c_date,
-                        "c_time": c_time,
-                    })
+                    c_time = (
+                        dt_parts[1].rsplit(":", 1)[0] if len(dt_parts) >= 2 else ""
+                    )  # drop seconds
+                    commits.append(
+                        {
+                            "hash": h,
+                            "message": msg,
+                            "date": date_iso,
+                            "c_date": c_date,
+                            "c_time": c_time,
+                        }
+                    )
         except (_sp.TimeoutExpired, FileNotFoundError):
             pass
     # Sort newest first by date
@@ -1162,7 +1232,11 @@ def render_scoped_roadmap(
         ctype = cnode.get("type", "").upper()
         cstatus = cnode.get("status", "")
         child_file = cnode.get("file", "")
-        link = os.path.relpath(child_file, os.path.dirname(artifact_file)) if (child_file and artifact_file) else cid
+        link = (
+            os.path.relpath(child_file, os.path.dirname(artifact_file))
+            if (child_file and artifact_file)
+            else cid
+        )
         if ctype == "EPIC":
             c, t = _spec_progress(cid, nodes, edges)
             progress_str = f"{c}/{t}" if t > 0 else "\u2014"
@@ -1206,11 +1280,19 @@ def render_scoped_roadmap(
         children.append(entry)
 
     # Group children by phase of the direct child (highest ancestor in the tree)
-    _PHASE_ORDER = ["Active", "In Progress", "Proposed", "Complete", "Superseded", "Archived"]
+    _PHASE_ORDER = [
+        "Active",
+        "In Progress",
+        "Proposed",
+        "Complete",
+        "Superseded",
+        "Archived",
+    ]
     _phase_rank = {p: i for i, p in enumerate(_PHASE_ORDER)}
     children.sort(key=lambda c: (_phase_rank.get(c["phase"], 99), c["id"]))
 
     from collections import OrderedDict
+
     children_by_phase: OrderedDict[str, list[dict]] = OrderedDict()
     for c in children:
         phase = c["phase"] or "Unknown"
@@ -1226,23 +1308,28 @@ def render_scoped_roadmap(
 
     # Eisenhower subset: collect items in scope and render
     scoped_items = collect_roadmap_items(nodes, edges, scope=artifact_id)
-    eisenhower_subset = render_eisenhower_table(scoped_items, nodes) if scoped_items else ""
+    eisenhower_subset = (
+        render_eisenhower_table(scoped_items, nodes) if scoped_items else ""
+    )
 
     if _HAS_JINJA:
         env = _jinja_env()
         tmpl = env.get_template("roadmap-slice.md.j2")
-        return tmpl.render(
-            artifact_id=artifact_id,
-            title=title,
-            intent=intent,
-            children_by_phase=children_by_phase,
-            progress_bar=progress_bar,
-            complete=complete,
-            total=total,
-            pct=pct,
-            recent_commits=recent_commits,
-            eisenhower_subset=eisenhower_subset,
-        ).rstrip("\n") + "\n"
+        return (
+            tmpl.render(
+                artifact_id=artifact_id,
+                title=title,
+                intent=intent,
+                children_by_phase=children_by_phase,
+                progress_bar=progress_bar,
+                complete=complete,
+                total=total,
+                pct=pct,
+                recent_commits=recent_commits,
+                eisenhower_subset=eisenhower_subset,
+            ).rstrip("\n")
+            + "\n"
+        )
     else:
         lines = [
             _AUTO_GENERATED_MARKER,
@@ -1258,12 +1345,16 @@ def render_scoped_roadmap(
             "",
         ]
         if recent_commits:
-            lines.extend([
-                "| Date | Time | Commit | Message |",
-                "|------|------|--------|---------|",
-            ])
+            lines.extend(
+                [
+                    "| Date | Time | Commit | Message |",
+                    "|------|------|--------|---------|",
+                ]
+            )
             for c in recent_commits:
-                lines.append(f"| {c.get('c_date', '')} | {c.get('c_time', '')} | `{c['hash']}` | {c['message']} |")
+                lines.append(
+                    f"| {c.get('c_date', '')} | {c.get('c_time', '')} | `{c['hash']}` | {c['message']} |"
+                )
         else:
             lines.append("_No recent commits reference child artifacts._")
         lines.append("")
@@ -1279,7 +1370,9 @@ def render_scoped_roadmap(
                 lines.append(f"- [{c['id']}]({c['link']}) \u2014 {c['title']}{prog}")
                 for gc in c.get("children", []):
                     gprog = f", {gc['progress']}" if gc.get("progress") else ""
-                    lines.append(f"  - [{gc['id']}]({gc['link']}) \u2014 {gc['title']} ({gc['phase']}{gprog})")
+                    lines.append(
+                        f"  - [{gc['id']}]({gc['link']}) \u2014 {gc['title']} ({gc['phase']}{gprog})"
+                    )
             lines.append("")
         return "\n".join(lines) + "\n"
 
@@ -1307,6 +1400,7 @@ def _write_scoped_slice(
             backup_path = os.path.join(artifact_dir, "roadmap.manual-backup.md")
             if not os.path.exists(backup_path):
                 import shutil
+
                 shutil.copy2(roadmap_path, backup_path)
 
     md = render_scoped_roadmap(artifact_id, nodes, edges, repo_root)
@@ -1355,21 +1449,26 @@ def render_roadmap_markdown(
 
     # Quadrant chart: try PNG side-by-side, fall back to inline Mermaid
     png_path = _render_quadrant_png(quadrant_src, repo_root) if repo_root else None
-    legend_cell = _render_legend_single_row(legend_items, nodes, items) if png_path else ""
+    legend_cell = (
+        _render_legend_single_row(legend_items, nodes, items) if png_path else ""
+    )
 
     if _HAS_JINJA:
         env = _jinja_env()
         tmpl = env.get_template("roadmap.md.j2")
-        return tmpl.render(
-            png_path=png_path,
-            quadrant_src=quadrant_src,
-            legend_cell=legend_cell,
-            recommendation=recommendation,
-            decisions=decisions,
-            eisenhower=eisenhower,
-            gantt=gantt,
-            dep_graph=dep_graph,
-        ).rstrip("\n") + "\n"
+        return (
+            tmpl.render(
+                png_path=png_path,
+                quadrant_src=quadrant_src,
+                legend_cell=legend_cell,
+                recommendation=recommendation,
+                decisions=decisions,
+                eisenhower=eisenhower,
+                gantt=gantt,
+                dep_graph=dep_graph,
+            ).rstrip("\n")
+            + "\n"
+        )
     else:
         lines = [
             "# Roadmap",
@@ -1379,20 +1478,24 @@ def render_roadmap_markdown(
         ]
 
         if png_path:
-            lines.extend([
-                "| Priority Matrix | Legend |",
-                "|:---:|:---|",
-                f"| ![Priority Matrix]({png_path}) | {legend_cell} |",
-                "",
-            ])
+            lines.extend(
+                [
+                    "| Priority Matrix | Legend |",
+                    "|:---:|:---|",
+                    f"| ![Priority Matrix]({png_path}) | {legend_cell} |",
+                    "",
+                ]
+            )
         else:
             # Fallback: inline Mermaid (no side-by-side)
-            lines.extend([
-                "```mermaid",
-                quadrant_src,
-                "```",
-                "",
-            ])
+            lines.extend(
+                [
+                    "```mermaid",
+                    quadrant_src,
+                    "```",
+                    "",
+                ]
+            )
 
         # Decision and recommendation sections before Eisenhower tables
         if recommendation:
@@ -1400,25 +1503,29 @@ def render_roadmap_markdown(
         if decisions:
             lines.append(decisions)
 
-        lines.extend([
-            eisenhower,
-            "## Timeline",
-            "",
-            "```mermaid",
-            gantt,
-            "```",
-            "",
-        ])
-
-        if dep_graph:
-            lines.extend([
-                "## Blocking Dependencies",
+        lines.extend(
+            [
+                eisenhower,
+                "## Timeline",
                 "",
                 "```mermaid",
-                dep_graph,
+                gantt,
                 "```",
                 "",
-            ])
+            ]
+        )
+
+        if dep_graph:
+            lines.extend(
+                [
+                    "## Blocking Dependencies",
+                    "",
+                    "```mermaid",
+                    dep_graph,
+                    "```",
+                    "",
+                ]
+            )
 
         return "\n".join(lines)
 
@@ -1426,6 +1533,7 @@ def render_roadmap_markdown(
 # ---------------------------------------------------------------------------
 # CLI entry point (raw format output)
 # ---------------------------------------------------------------------------
+
 
 def render_roadmap(
     nodes: dict,
@@ -1438,6 +1546,7 @@ def render_roadmap(
 
     if json_output:
         import json
+
         return json.dumps(items, indent=2)
 
     if fmt == "mermaid-flowchart":
@@ -1500,8 +1609,14 @@ def render_roadmap_cli(items: list[dict]) -> str:
                 title = init["title"]
                 short = _short_id(init["id"])
                 progress = f"{init['children_complete']}/{init['children_total']}"
-                decision = f"  {init['operator_decision']}" if init.get("operator_decision") else ""
-                lines.append(f"  {title} ({short}){' ' * max(1, 48 - len(title) - len(short))}{progress}{decision}")
+                decision = (
+                    f"  {init['operator_decision']}"
+                    if init.get("operator_decision")
+                    else ""
+                )
+                lines.append(
+                    f"  {title} ({short}){' ' * max(1, 48 - len(title) - len(short))}{progress}{decision}"
+                )
             else:
                 # No initiative item in this quadrant — use group_title from first child
                 title = group_items[0].get("group_title", group_id)
@@ -1513,7 +1628,11 @@ def render_roadmap_cli(items: list[dict]) -> str:
                 cid = child["id"]
                 ctitle = child["title"][:40]
                 progress = f"{child['children_complete']}/{child['children_total']}"
-                decision = f"  {child['operator_decision']}" if child.get("operator_decision") else ""
+                decision = (
+                    f"  {child['operator_decision']}"
+                    if child.get("operator_decision")
+                    else ""
+                )
                 lines.append(f"    {cid:<12s}  {ctitle:<40s}  {progress}{decision}")
 
         lines.append("")  # blank line between quadrants

@@ -51,12 +51,14 @@ def scan_git_log(
     try:
         result = subprocess.run(
             [
-                "git", "log",
+                "git",
+                "log",
                 f"--since={days} days ago",
                 "--name-only",
                 "--pretty=format:%aI",
                 "--diff-filter=AMRC",
-                "--", "docs/",
+                "--",
+                "docs/",
             ],
             capture_output=True,
             text=True,
@@ -104,7 +106,10 @@ def compute_attention(
             attention[vision] = {"transitions": 0, "last_activity": None}
         attention[vision]["transitions"] += 1
         date_str = commit_date.isoformat()
-        if attention[vision]["last_activity"] is None or date_str > attention[vision]["last_activity"]:
+        if (
+            attention[vision]["last_activity"] is None
+            or date_str > attention[vision]["last_activity"]
+        ):
             attention[vision]["last_activity"] = date_str
 
     return attention
@@ -144,11 +149,13 @@ def compute_drift(
             days_since = 999  # No activity ever
 
         if days_since >= threshold_days:
-            drifting.append({
-                "vision_id": node_id,
-                "weight": weight_label,
-                "days_since_activity": days_since,
-                "threshold": threshold_days,
-            })
+            drifting.append(
+                {
+                    "vision_id": node_id,
+                    "weight": weight_label,
+                    "days_since_activity": days_since,
+                    "threshold": threshold_days,
+                }
+            )
 
     return drifting

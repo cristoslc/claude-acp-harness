@@ -3,15 +3,18 @@
 Each lens answers a different question about the project hierarchy.
 The tree renderer handles display; lenses handle semantics.
 """
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Callable
 
-from specgraph.tree_renderer import _compute_ready_set, _walk_to_vision, _node_is_resolved
+from specgraph.tree_renderer import (
+    _compute_ready_set,
+    _walk_to_vision,
+    _node_is_resolved,
+)
 from specgraph.priority import (
     resolve_vision_weight,
-    WEIGHT_MAP,
     rank_recommendations,
     compute_decision_debt,
 )
@@ -35,8 +38,7 @@ class Lens(ABC):
         """Return annotations for displayed nodes. Default: empty."""
         return {}
 
-    def sort_key(self, artifact_id: str, nodes: dict,
-                 edges: list[dict]) -> tuple:
+    def sort_key(self, artifact_id: str, nodes: dict, edges: list[dict]) -> tuple:
         """Sort key for ordering siblings. Default: alphabetical by title."""
         return (nodes.get(artifact_id, {}).get("title", artifact_id).lower(),)
 
@@ -62,11 +64,12 @@ class ReadyLens(Lens):
     def select(self, nodes: dict, edges: list[dict]) -> set[str]:
         return _compute_ready_set(nodes, edges)
 
-    def sort_key(self, artifact_id: str, nodes: dict,
-                 edges: list[dict]) -> tuple:
+    def sort_key(self, artifact_id: str, nodes: dict, edges: list[dict]) -> tuple:
         unblock_count = sum(
-            1 for e in edges
-            if e.get("to") == artifact_id and e.get("type") == "depends-on"
+            1
+            for e in edges
+            if e.get("to") == artifact_id
+            and e.get("type") == "depends-on"
             and not _node_is_resolved(e["from"], nodes)
         )
         title = nodes.get(artifact_id, {}).get("title", artifact_id).lower()
@@ -93,14 +96,15 @@ class RecommendLens(Lens):
         ranked = rank_recommendations(nodes, edges, focus_vision=self._focus)
         return {item["id"]: f"score={item['score']}" for item in ranked}
 
-    def sort_key(self, artifact_id: str, nodes: dict,
-                 edges: list[dict]) -> tuple:
+    def sort_key(self, artifact_id: str, nodes: dict, edges: list[dict]) -> tuple:
         score = self._scores.get(artifact_id)
         if score is None:
             weight = resolve_vision_weight(artifact_id, nodes, edges)
             unblock_count = sum(
-                1 for e in edges
-                if e.get("to") == artifact_id and e.get("type") == "depends-on"
+                1
+                for e in edges
+                if e.get("to") == artifact_id
+                and e.get("type") == "depends-on"
                 and not _node_is_resolved(e["from"], nodes)
             )
             score = unblock_count * weight
@@ -151,8 +155,7 @@ class DebtLens(Lens):
                 annotations[item_id] = f"[{status}]"
         return annotations
 
-    def sort_key(self, artifact_id: str, nodes: dict,
-                 edges: list[dict]) -> tuple:
+    def sort_key(self, artifact_id: str, nodes: dict, edges: list[dict]) -> tuple:
         return (nodes.get(artifact_id, {}).get("title", artifact_id).lower(),)
 
 
@@ -167,9 +170,7 @@ class UnanchoredLens(Lens):
         unanchored = set()
         for aid in nodes:
             chain = _walk_to_vision(aid, edges)
-            has_vision = any(
-                nodes.get(c, {}).get("type") == "VISION" for c in chain
-            )
+            has_vision = any(nodes.get(c, {}).get("type") == "VISION" for c in chain)
             if not has_vision and not _node_is_resolved(aid, nodes):
                 unanchored.add(aid)
         return unanchored
@@ -186,16 +187,23 @@ class StatusLens(Lens):
         return set(nodes.keys())
 
     def annotate(self, nodes: dict, edges: list[dict]) -> dict[str, str]:
-        return {aid: f"[{node.get('status', '?')}]"
-                for aid, node in nodes.items()}
+        return {aid: f"[{node.get('status', '?')}]" for aid, node in nodes.items()}
 
-    def sort_key(self, artifact_id: str, nodes: dict,
-                 edges: list[dict]) -> tuple:
-        phase_order = {"Proposed": 0, "Active": 1, "Ready": 1, "InProgress": 2,
-                       "NeedsManualTest": 3, "Complete": 4, "Abandoned": 5}
+    def sort_key(self, artifact_id: str, nodes: dict, edges: list[dict]) -> tuple:
+        phase_order = {
+            "Proposed": 0,
+            "Active": 1,
+            "Ready": 1,
+            "InProgress": 2,
+            "NeedsManualTest": 3,
+            "Complete": 4,
+            "Abandoned": 5,
+        }
         status = nodes.get(artifact_id, {}).get("status", "")
-        return (phase_order.get(status, 99),
-                nodes.get(artifact_id, {}).get("title", "").lower())
+        return (
+            phase_order.get(status, 99),
+            nodes.get(artifact_id, {}).get("title", "").lower(),
+        )
 
 
 # Lens registry

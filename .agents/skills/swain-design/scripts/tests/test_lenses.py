@@ -1,4 +1,5 @@
 """Tests for chart lenses."""
+
 import sys
 from pathlib import Path
 
@@ -6,28 +7,64 @@ SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
 from specgraph.lenses import (
-    DefaultLens, ReadyLens, RecommendLens, UnanchoredLens,
-    DebtLens, StatusLens, AttentionLens, LENSES,
+    DefaultLens,
+    ReadyLens,
+    RecommendLens,
+    UnanchoredLens,
+    DebtLens,
+    StatusLens,
+    AttentionLens,
+    LENSES,
 )
 
 
 def _make_graph():
     nodes = {
-        "VISION-001": {"status": "Active", "type": "VISION", "track": "standing",
-                       "title": "Swain", "priority_weight": "high",
-                       "file": "", "description": ""},
-        "INITIATIVE-001": {"status": "Active", "type": "INITIATIVE", "track": "container",
-                           "title": "Awareness", "priority_weight": "",
-                           "file": "", "description": ""},
-        "EPIC-001": {"status": "Active", "type": "EPIC", "track": "container",
-                     "title": "Chart", "priority_weight": "",
-                     "file": "", "description": ""},
-        "SPEC-001": {"status": "Active", "type": "SPEC", "track": "implementable",
-                     "title": "Renderer", "priority_weight": "",
-                     "file": "", "description": ""},
-        "SPEC-002": {"status": "Complete", "type": "SPEC", "track": "implementable",
-                     "title": "Done Spec", "priority_weight": "",
-                     "file": "", "description": ""},
+        "VISION-001": {
+            "status": "Active",
+            "type": "VISION",
+            "track": "standing",
+            "title": "Swain",
+            "priority_weight": "high",
+            "file": "",
+            "description": "",
+        },
+        "INITIATIVE-001": {
+            "status": "Active",
+            "type": "INITIATIVE",
+            "track": "container",
+            "title": "Awareness",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        },
+        "EPIC-001": {
+            "status": "Active",
+            "type": "EPIC",
+            "track": "container",
+            "title": "Chart",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        },
+        "SPEC-001": {
+            "status": "Active",
+            "type": "SPEC",
+            "track": "implementable",
+            "title": "Renderer",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        },
+        "SPEC-002": {
+            "status": "Complete",
+            "type": "SPEC",
+            "track": "implementable",
+            "title": "Done Spec",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        },
     }
     edges = [
         {"from": "INITIATIVE-001", "to": "VISION-001", "type": "parent-vision"},
@@ -72,9 +109,15 @@ class TestReadyLens:
     def test_sort_by_unblock_count(self):
         """Artifacts that unblock more work sort first."""
         nodes, edges = _make_graph()
-        nodes["SPEC-003"] = {"status": "Active", "type": "SPEC", "track": "implementable",
-                             "title": "Blocked Spec", "priority_weight": "",
-                             "file": "", "description": ""}
+        nodes["SPEC-003"] = {
+            "status": "Active",
+            "type": "SPEC",
+            "track": "implementable",
+            "title": "Blocked Spec",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        }
         edges.append({"from": "SPEC-003", "to": "EPIC-001", "type": "parent-epic"})
         # SPEC-003 depends on SPEC-001, so SPEC-001 unblocks 1 thing
         edges.append({"from": "SPEC-003", "to": "SPEC-001", "type": "depends-on"})
@@ -109,9 +152,15 @@ class TestRecommendLens:
 class TestUnanchoredLens:
     def test_selects_only_unanchored(self):
         nodes, edges = _make_graph()
-        nodes["EPIC-099"] = {"status": "Active", "type": "EPIC", "track": "container",
-                             "title": "Orphan", "priority_weight": "",
-                             "file": "", "description": ""}
+        nodes["EPIC-099"] = {
+            "status": "Active",
+            "type": "EPIC",
+            "track": "container",
+            "title": "Orphan",
+            "priority_weight": "",
+            "file": "",
+            "description": "",
+        }
         lens = UnanchoredLens()
         selected = lens.select(nodes, edges)
         assert "EPIC-099" in selected
@@ -121,15 +170,33 @@ class TestUnanchoredLens:
 class TestDebtLens:
     def test_selects_decision_type_items(self):
         nodes = {
-            "VISION-001": {"status": "Active", "type": "VISION", "track": "standing",
-                           "title": "V1", "priority_weight": "high",
-                           "file": "", "description": ""},
-            "EPIC-001": {"status": "Proposed", "type": "EPIC", "track": "container",
-                         "title": "Proposed Epic", "priority_weight": "",
-                         "file": "", "description": ""},
-            "SPEC-001": {"status": "Active", "type": "SPEC", "track": "implementable",
-                         "title": "Active Spec", "priority_weight": "",
-                         "file": "", "description": ""},
+            "VISION-001": {
+                "status": "Active",
+                "type": "VISION",
+                "track": "standing",
+                "title": "V1",
+                "priority_weight": "high",
+                "file": "",
+                "description": "",
+            },
+            "EPIC-001": {
+                "status": "Proposed",
+                "type": "EPIC",
+                "track": "container",
+                "title": "Proposed Epic",
+                "priority_weight": "",
+                "file": "",
+                "description": "",
+            },
+            "SPEC-001": {
+                "status": "Active",
+                "type": "SPEC",
+                "track": "implementable",
+                "title": "Active Spec",
+                "priority_weight": "",
+                "file": "",
+                "description": "",
+            },
         }
         edges = [
             {"from": "EPIC-001", "to": "VISION-001", "type": "parent-vision"},

@@ -38,6 +38,7 @@ class ScannerResult:
 # OS detection
 # ---------------------------------------------------------------------------
 
+
 def detect_os() -> str:
     """Detect the operating system. Returns 'darwin', 'linux', or the raw system name lowercased."""
     return platform.system().lower()
@@ -95,6 +96,7 @@ def get_install_command(scanner: str, os_name: str) -> str:
 # Individual scanner checks
 # ---------------------------------------------------------------------------
 
+
 def check_scanner(name: str) -> ScannerResult:
     """Check if a scanner binary is available in PATH.
 
@@ -134,7 +136,7 @@ def check_semgrep() -> ScannerResult:
         return ScannerResult(
             name="semgrep",
             available=True,
-            path=f"uv run --with semgrep semgrep",
+            path="uv run --with semgrep semgrep",
         )
 
     # Neither available
@@ -169,6 +171,7 @@ def check_all_scanners() -> list[ScannerResult]:
 # ---------------------------------------------------------------------------
 # CLI entry point for swain-doctor integration
 # ---------------------------------------------------------------------------
+
 
 def format_report(results: list[ScannerResult]) -> str:
     """Format scanner availability as a human-readable report.

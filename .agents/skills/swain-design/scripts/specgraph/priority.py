@@ -8,7 +8,12 @@ Vision weight cascades: Vision → Initiative (can override) → Epic (can overr
 
 from __future__ import annotations
 
-from .queries import _walk_parent_chain, _compute_ready_set, _find_vision_ancestor, _node_is_resolved
+from .queries import (
+    _walk_parent_chain,
+    _compute_ready_set,
+    _find_vision_ancestor,
+    _node_is_resolved,
+)
 
 WEIGHT_MAP = {"high": 3, "medium": 2, "low": 1}
 DEFAULT_WEIGHT = 2  # medium
@@ -58,7 +63,10 @@ def _is_decision_type(node: dict) -> bool:
     t = node.get("type", "").upper()
     if t in _DECISION_ONLY_TYPES:
         return True
-    if t in ("EPIC", "INITIATIVE", "SPIKE") and node.get("status", "") in _DECISION_PHASES:
+    if (
+        t in ("EPIC", "INITIATIVE", "SPIKE")
+        and node.get("status", "") in _DECISION_PHASES
+    ):
         return True
     if t == "SPEC" and node.get("status", "") in _DECISION_PHASES:
         return True
@@ -107,20 +115,30 @@ def rank_recommendations(
         unblock_count = _compute_unblock_count(rid, nodes, edges)
         vision_debt = debt.get(vision or "_unaligned", {}).get("count", 0)
 
-        scored.append({
-            "id": rid,
-            "score": unblock_count * weight,
-            "unblock_count": unblock_count,
-            "vision_weight": weight,
-            "vision_id": vision,
-            "vision_debt": vision_debt,
-            "is_decision": _is_decision_type(node),
-            "type": node.get("type", ""),
-            "sort_order": node.get("sort_order", 0),
-        })
+        scored.append(
+            {
+                "id": rid,
+                "score": unblock_count * weight,
+                "unblock_count": unblock_count,
+                "vision_weight": weight,
+                "vision_id": vision,
+                "vision_debt": vision_debt,
+                "is_decision": _is_decision_type(node),
+                "type": node.get("type", ""),
+                "sort_order": node.get("sort_order", 0),
+            }
+        )
 
     # Sort: score desc, then sort_order desc, then vision_debt desc, then is_decision desc, then id asc
-    scored.sort(key=lambda x: (-x["score"], -x["sort_order"], -x["vision_debt"], -int(x["is_decision"]), x["id"]))
+    scored.sort(
+        key=lambda x: (
+            -x["score"],
+            -x["sort_order"],
+            -x["vision_debt"],
+            -int(x["is_decision"]),
+            x["id"],
+        )
+    )
     return scored
 
 

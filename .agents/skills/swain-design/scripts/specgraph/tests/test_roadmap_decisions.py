@@ -3,6 +3,7 @@
 Validates that render_decisions_section() and render_recommendation_section()
 produce correct markdown using existing specgraph data.
 """
+
 from __future__ import annotations
 
 import sys
@@ -154,7 +155,11 @@ def test_recommendation_includes_rationale():
     items = collect_roadmap_items(nodes, edges)
     section = render_recommendation_section(items, nodes, edges)
     # Should include some scoring rationale
-    assert "unblock" in section.lower() or "score" in section.lower() or "weight" in section.lower()
+    assert (
+        "unblock" in section.lower()
+        or "score" in section.lower()
+        or "weight" in section.lower()
+    )
 
 
 def test_recommendation_empty_when_no_ready_items():
@@ -203,9 +208,9 @@ def test_roadmap_markdown_decisions_before_eisenhower():
     if eisenhower_pos == -1:
         eisenhower_pos = md.find("### Schedule")
     if decisions_pos >= 0 and eisenhower_pos >= 0:
-        assert decisions_pos < eisenhower_pos, (
-            "Decisions section should appear before Eisenhower tables"
-        )
+        assert (
+            decisions_pos < eisenhower_pos
+        ), "Decisions section should appear before Eisenhower tables"
 
 
 def test_roadmap_markdown_preserves_existing_sections():

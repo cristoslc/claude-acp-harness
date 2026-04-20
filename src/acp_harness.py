@@ -1,9 +1,8 @@
 import logging
-import sys
 
 import uvicorn
 
-from config import HarnessConfig, load_config
+from config import load_config
 from rest_api import create_app
 
 

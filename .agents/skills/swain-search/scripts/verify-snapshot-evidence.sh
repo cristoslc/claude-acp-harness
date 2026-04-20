@@ -87,4 +87,3 @@ else
   echo "ERROR: verification failed unexpectedly for $SOURCE_URL" >&2
   exit 1
 fi
-

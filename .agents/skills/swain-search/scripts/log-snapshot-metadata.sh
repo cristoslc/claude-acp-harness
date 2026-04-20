@@ -98,4 +98,3 @@ print(json.dumps(entry, separators=(",", ":")))
 PY
 
 echo "logged:$METADATA_FILE"
-

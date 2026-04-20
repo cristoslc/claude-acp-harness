@@ -4,12 +4,24 @@ import sys
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
 
-from specgraph.queries import blocks, blocked_by, tree, edges_cmd, neighbors, scope, impact, mermaid_cmd, status_cmd, ready, next_cmd, overview
+from specgraph.queries import (
+    blocks,
+    blocked_by,
+    tree,
+    edges_cmd,
+    neighbors,
+    scope,
+    impact,
+    mermaid_cmd,
+    status_cmd,
+    ready,
+    next_cmd,
+    overview,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -18,13 +30,55 @@ from specgraph.queries import blocks, blocked_by, tree, edges_cmd, neighbors, sc
 
 # Node structure: id → {title, status, type, file, description}
 NODES = {
-    "SPEC-001": {"title": "Spec 1", "status": "In Progress", "type": "SPEC", "file": "docs/spec/SPEC-001.md", "description": ""},
-    "SPEC-002": {"title": "Spec 2", "status": "Ready", "type": "SPEC", "file": "docs/spec/SPEC-002.md", "description": ""},
-    "SPEC-003": {"title": "Spec 3 (resolved)", "status": "Complete", "type": "SPEC", "file": "docs/spec/SPEC-003.md", "description": ""},
-    "EPIC-001": {"title": "Epic 1", "status": "Active", "type": "EPIC", "file": "docs/epic/EPIC-001.md", "description": ""},
-    "EPIC-002": {"title": "Epic 2 (resolved)", "status": "Complete", "type": "EPIC", "file": "docs/epic/EPIC-002.md", "description": ""},
-    "ADR-001": {"title": "ADR 1 (standing/active)", "status": "Active", "type": "ADR", "file": "docs/adr/ADR-001.md", "description": ""},
-    "SPIKE-001": {"title": "Spike 1", "status": "In Progress", "type": "SPIKE", "file": "docs/spike/SPIKE-001.md", "description": ""},
+    "SPEC-001": {
+        "title": "Spec 1",
+        "status": "In Progress",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-001.md",
+        "description": "",
+    },
+    "SPEC-002": {
+        "title": "Spec 2",
+        "status": "Ready",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-002.md",
+        "description": "",
+    },
+    "SPEC-003": {
+        "title": "Spec 3 (resolved)",
+        "status": "Complete",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-003.md",
+        "description": "",
+    },
+    "EPIC-001": {
+        "title": "Epic 1",
+        "status": "Active",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-001.md",
+        "description": "",
+    },
+    "EPIC-002": {
+        "title": "Epic 2 (resolved)",
+        "status": "Complete",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-002.md",
+        "description": "",
+    },
+    "ADR-001": {
+        "title": "ADR 1 (standing/active)",
+        "status": "Active",
+        "type": "ADR",
+        "file": "docs/adr/ADR-001.md",
+        "description": "",
+    },
+    "SPIKE-001": {
+        "title": "Spike 1",
+        "status": "In Progress",
+        "type": "SPIKE",
+        "file": "docs/spike/SPIKE-001.md",
+        "description": "",
+    },
 }
 
 # Edge structure: list of {from, to, type}
@@ -168,8 +222,20 @@ class TestBlocksBlockedByTreeEdges:
     def test_tree_handles_cycle(self):
         """tree with a cycle terminates without infinite loop."""
         cycle_nodes = {
-            "A": {"title": "A", "status": "In Progress", "type": "SPEC", "file": "", "description": ""},
-            "B": {"title": "B", "status": "In Progress", "type": "SPEC", "file": "", "description": ""},
+            "A": {
+                "title": "A",
+                "status": "In Progress",
+                "type": "SPEC",
+                "file": "",
+                "description": "",
+            },
+            "B": {
+                "title": "B",
+                "status": "In Progress",
+                "type": "SPEC",
+                "file": "",
+                "description": "",
+            },
         }
         cycle_edges = [
             {"from": "A", "to": "B", "type": "depends-on"},
@@ -210,7 +276,9 @@ class TestBlocksBlockedByTreeEdges:
         for line in result.strip().split("\n"):
             if line:
                 parts = line.split("\t")
-                assert len(parts) == 3, f"Expected 3 tab-separated fields, got: {line!r}"
+                assert (
+                    len(parts) == 3
+                ), f"Expected 3 tab-separated fields, got: {line!r}"
 
     def test_edges_cmd_filtered_by_artifact_id_from(self):
         """edges_cmd(SPEC-001) includes edges where SPEC-001 is the source."""
@@ -250,7 +318,9 @@ class TestBlocksBlockedByTreeEdges:
         """blocks with show_links=True on non-TTY returns plain IDs."""
         with patch("sys.stdout") as mock_stdout:
             mock_stdout.isatty.return_value = False
-            result = blocks("SPEC-001", NODES, EDGES, repo_root="/repo", show_links=True)
+            result = blocks(
+                "SPEC-001", NODES, EDGES, repo_root="/repo", show_links=True
+            )
         assert "\x1b" not in result
         ids = result.strip().split("\n") if result.strip() else []
         assert "SPEC-002" in ids
@@ -259,7 +329,9 @@ class TestBlocksBlockedByTreeEdges:
         """blocked_by with show_links=True on non-TTY returns plain IDs."""
         with patch("sys.stdout") as mock_stdout:
             mock_stdout.isatty.return_value = False
-            result = blocked_by("SPEC-002", NODES, EDGES, repo_root="/repo", show_links=True)
+            result = blocked_by(
+                "SPEC-002", NODES, EDGES, repo_root="/repo", show_links=True
+            )
         assert "\x1b" not in result
         ids = result.strip().split("\n") if result.strip() else []
         assert "SPEC-001" in ids
@@ -343,7 +415,9 @@ class TestNeighbors:
         """neighbors output is sorted by direction, then edge_type, then artifact_id."""
         result = neighbors("EPIC-001", NODES, EDGES)
         lines = [l for l in result.strip().split("\n") if l]
-        tuples = [tuple(l.split("\t")[:3]) for l in lines]  # direction, edge_type, artifact_id
+        tuples = [
+            tuple(l.split("\t")[:3]) for l in lines
+        ]  # direction, edge_type, artifact_id
         assert tuples == sorted(tuples), f"Output not sorted: {tuples}"
 
     def test_neighbors_unknown_node_shows_empty_status_title(self):
@@ -358,8 +432,8 @@ class TestNeighbors:
         assert unknown_rows, "Expected row for UNKNOWN-999"
         parts = unknown_rows[0].split("\t")
         assert len(parts) == 5
-        assert parts[3] == ""   # status empty
-        assert parts[4] == ""   # title empty
+        assert parts[3] == ""  # status empty
+        assert parts[4] == ""  # title empty
 
 
 # ---------------------------------------------------------------------------
@@ -368,13 +442,55 @@ class TestNeighbors:
 
 # Richer graph: VISION → EPIC → SPEC hierarchy + laterals
 SCOPE_NODES = {
-    "VISION-001": {"title": "Vision 1", "status": "Active", "type": "VISION", "file": "docs/vision/VISION-001.md", "description": ""},
-    "EPIC-010": {"title": "Epic 10", "status": "Active", "type": "EPIC", "file": "docs/epic/EPIC-010.md", "description": ""},
-    "EPIC-011": {"title": "Epic 11", "status": "Active", "type": "EPIC", "file": "docs/epic/EPIC-011.md", "description": ""},
-    "SPEC-010": {"title": "Spec 10", "status": "In Progress", "type": "SPEC", "file": "docs/spec/SPEC-010.md", "description": ""},
-    "SPEC-011": {"title": "Spec 11", "status": "Ready", "type": "SPEC", "file": "docs/spec/SPEC-011.md", "description": ""},
-    "SPEC-012": {"title": "Spec 12", "status": "Draft", "type": "SPEC", "file": "docs/spec/SPEC-012.md", "description": ""},
-    "ADR-010": {"title": "ADR 10", "status": "Active", "type": "ADR", "file": "docs/adr/ADR-010.md", "description": ""},
+    "VISION-001": {
+        "title": "Vision 1",
+        "status": "Active",
+        "type": "VISION",
+        "file": "docs/vision/VISION-001.md",
+        "description": "",
+    },
+    "EPIC-010": {
+        "title": "Epic 10",
+        "status": "Active",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-010.md",
+        "description": "",
+    },
+    "EPIC-011": {
+        "title": "Epic 11",
+        "status": "Active",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-011.md",
+        "description": "",
+    },
+    "SPEC-010": {
+        "title": "Spec 10",
+        "status": "In Progress",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-010.md",
+        "description": "",
+    },
+    "SPEC-011": {
+        "title": "Spec 11",
+        "status": "Ready",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-011.md",
+        "description": "",
+    },
+    "SPEC-012": {
+        "title": "Spec 12",
+        "status": "Draft",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-012.md",
+        "description": "",
+    },
+    "ADR-010": {
+        "title": "ADR 10",
+        "status": "Active",
+        "type": "ADR",
+        "file": "docs/adr/ADR-010.md",
+        "description": "",
+    },
 }
 
 SCOPE_EDGES = [
@@ -594,12 +710,48 @@ class TestImpact:
 # ---------------------------------------------------------------------------
 
 MERMAID_NODES = {
-    "SPEC-001": {"title": "Spec One", "status": "In Progress", "type": "SPEC", "file": "docs/spec/SPEC-001.md", "description": ""},
-    "SPEC-002": {"title": 'Spec "Quoted"', "status": "Ready", "type": "SPEC", "file": "docs/spec/SPEC-002.md", "description": ""},
-    "EPIC-001": {"title": "Epic One", "status": "Active", "type": "EPIC", "file": "docs/epic/EPIC-001.md", "description": ""},
-    "EPIC-002": {"title": "Epic Done", "status": "Complete", "type": "EPIC", "file": "docs/epic/EPIC-002.md", "description": ""},
-    "ADR-001": {"title": "ADR Active", "status": "Active", "type": "ADR", "file": "docs/adr/ADR-001.md", "description": ""},
-    "SPIKE-001": {"title": "", "status": "In Progress", "type": "SPIKE", "file": "docs/spike/SPIKE-001.md", "description": ""},
+    "SPEC-001": {
+        "title": "Spec One",
+        "status": "In Progress",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-001.md",
+        "description": "",
+    },
+    "SPEC-002": {
+        "title": 'Spec "Quoted"',
+        "status": "Ready",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-002.md",
+        "description": "",
+    },
+    "EPIC-001": {
+        "title": "Epic One",
+        "status": "Active",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-001.md",
+        "description": "",
+    },
+    "EPIC-002": {
+        "title": "Epic Done",
+        "status": "Complete",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-002.md",
+        "description": "",
+    },
+    "ADR-001": {
+        "title": "ADR Active",
+        "status": "Active",
+        "type": "ADR",
+        "file": "docs/adr/ADR-001.md",
+        "description": "",
+    },
+    "SPIKE-001": {
+        "title": "",
+        "status": "In Progress",
+        "type": "SPIKE",
+        "file": "docs/spike/SPIKE-001.md",
+        "description": "",
+    },
 }
 
 MERMAID_EDGES = [
@@ -666,7 +818,7 @@ class TestMermaid:
         """mermaid_cmd escapes double quotes in titles with #quot;."""
         result = mermaid_cmd(MERMAID_NODES, MERMAID_EDGES)
         # SPEC-002 title has double quotes: Spec "Quoted"
-        assert '#quot;' in result
+        assert "#quot;" in result
 
     def test_mermaid_includes_depends_on_edges(self):
         """mermaid_cmd includes depends-on edges between visible nodes."""
@@ -712,7 +864,9 @@ class TestMermaid:
 
     def test_mermaid_all_edges_show_all_includes_edges_to_resolved(self):
         """mermaid_cmd all_edges=True, show_all=True includes edges involving resolved nodes."""
-        result = mermaid_cmd(MERMAID_NODES, MERMAID_EDGES, show_all=True, all_edges=True)
+        result = mermaid_cmd(
+            MERMAID_NODES, MERMAID_EDGES, show_all=True, all_edges=True
+        )
         lines = result.split("\n")
         edge_lines = [l for l in lines if "-->" in l]
         assert any("ADR-001" in l for l in edge_lines)
@@ -859,7 +1013,9 @@ class TestReady:
     def test_ready_output_includes_status_and_title(self):
         """ready() output lines contain status and title for EPIC-001."""
         result = ready(NODES, EDGES)
-        epic_line = next((l for l in result.split("\n") if l.startswith("EPIC-001")), None)
+        epic_line = next(
+            (l for l in result.split("\n") if l.startswith("EPIC-001")), None
+        )
         assert epic_line is not None, "EPIC-001 not found in ready output"
         assert "Active" in epic_line
         assert "Epic 1" in epic_line
@@ -886,8 +1042,20 @@ class TestReady:
     def test_ready_all_resolved_returns_empty(self):
         """ready() returns empty string when all nodes are resolved."""
         resolved_nodes = {
-            "SPEC-003": {"title": "Done", "status": "Complete", "type": "SPEC", "file": "", "description": ""},
-            "EPIC-002": {"title": "Done Epic", "status": "Complete", "type": "EPIC", "file": "", "description": ""},
+            "SPEC-003": {
+                "title": "Done",
+                "status": "Complete",
+                "type": "SPEC",
+                "file": "",
+                "description": "",
+            },
+            "EPIC-002": {
+                "title": "Done Epic",
+                "status": "Complete",
+                "type": "EPIC",
+                "file": "",
+                "description": "",
+            },
         }
         result = ready(resolved_nodes, [])
         assert result == ""
@@ -931,12 +1099,16 @@ class TestNext:
         # The would-unblock line should appear after EPIC-001 in the READY section
         lines = result.split("\n")
         epic_idx = next(
-            (i for i, l in enumerate(lines) if "EPIC-001" in l and "would unblock" not in l),
+            (
+                i
+                for i, l in enumerate(lines)
+                if "EPIC-001" in l and "would unblock" not in l
+            ),
             None,
         )
         assert epic_idx is not None, "EPIC-001 not found in output"
         # Look within a few lines for the would-unblock annotation
-        context = "\n".join(lines[epic_idx:epic_idx + 3])
+        context = "\n".join(lines[epic_idx : epic_idx + 3])
         assert "would unblock" in context
         assert "SPEC-002" in context
 
@@ -949,7 +1121,11 @@ class TestNext:
         # Each blocked line starts with "  ARTIFACT-ID  ..." — find the line
         # that starts with SPEC-002 (after stripping leading whitespace).
         spec002_line = next(
-            (l for l in blocked_section.split("\n") if l.lstrip().startswith("SPEC-002")),
+            (
+                l
+                for l in blocked_section.split("\n")
+                if l.lstrip().startswith("SPEC-002")
+            ),
             None,
         )
         assert spec002_line is not None, "SPEC-002 not found in BLOCKED section"
@@ -959,7 +1135,13 @@ class TestNext:
     def test_next_none_placeholder_empty_case(self):
         """next_cmd shows '(none)' in READY section when all nodes are resolved."""
         resolved_nodes = {
-            "SPEC-003": {"title": "Done", "status": "Complete", "type": "SPEC", "file": "", "description": ""},
+            "SPEC-003": {
+                "title": "Done",
+                "status": "Complete",
+                "type": "SPEC",
+                "file": "",
+                "description": "",
+            },
         }
         result = next_cmd(resolved_nodes, [])
         assert "READY:" in result
@@ -969,7 +1151,13 @@ class TestNext:
         """next_cmd shows '(none)' in BLOCKED section when nothing is blocked."""
         # Only a ready node with no dependents
         simple_nodes = {
-            "SPIKE-001": {"title": "Spike 1", "status": "In Progress", "type": "SPIKE", "file": "", "description": ""},
+            "SPIKE-001": {
+                "title": "Spike 1",
+                "status": "In Progress",
+                "type": "SPIKE",
+                "file": "",
+                "description": "",
+            },
         }
         result = next_cmd(simple_nodes, [])
         blocked_section = result.split("BLOCKED:")[-1]
@@ -995,11 +1183,41 @@ class TestNext:
 # SPIKE-010 has no parent edge (unparented root)
 HIER_NODES = {
     # Use "In Progress" for VISION so it is not resolved (VISION "Active" = resolved in standing types)
-    "VISION-001": {"title": "Product Vision", "status": "In Progress", "type": "VISION", "file": "docs/vision/VISION-001.md", "description": ""},
-    "EPIC-001": {"title": "Epic 1", "status": "Active", "type": "EPIC", "file": "docs/epic/EPIC-001.md", "description": ""},
-    "SPEC-010": {"title": "Spec 10", "status": "In Progress", "type": "SPEC", "file": "docs/spec/SPEC-010.md", "description": ""},
-    "SPEC-011": {"title": "Spec 11 (done)", "status": "Complete", "type": "SPEC", "file": "docs/spec/SPEC-011.md", "description": ""},
-    "SPIKE-010": {"title": "Orphan Spike", "status": "In Progress", "type": "SPIKE", "file": "docs/spike/SPIKE-010.md", "description": ""},
+    "VISION-001": {
+        "title": "Product Vision",
+        "status": "In Progress",
+        "type": "VISION",
+        "file": "docs/vision/VISION-001.md",
+        "description": "",
+    },
+    "EPIC-001": {
+        "title": "Epic 1",
+        "status": "Active",
+        "type": "EPIC",
+        "file": "docs/epic/EPIC-001.md",
+        "description": "",
+    },
+    "SPEC-010": {
+        "title": "Spec 10",
+        "status": "In Progress",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-010.md",
+        "description": "",
+    },
+    "SPEC-011": {
+        "title": "Spec 11 (done)",
+        "status": "Complete",
+        "type": "SPEC",
+        "file": "docs/spec/SPEC-011.md",
+        "description": "",
+    },
+    "SPIKE-010": {
+        "title": "Orphan Spike",
+        "status": "In Progress",
+        "type": "SPIKE",
+        "file": "docs/spike/SPIKE-010.md",
+        "description": "",
+    },
 }
 HIER_EDGES = [
     {"from": "EPIC-001", "to": "VISION-001", "type": "parent-vision"},
@@ -1022,9 +1240,12 @@ class TestOverview:
         # EPIC-001 line must come after VISION-001 line
         assert lines.index(epic_line) > lines.index(vision_line)
         # EPIC-001 should be indented (start with whitespace or tree chars)
-        assert epic_line[0] in (" ", "\u251c", "\u2514", "\u2502"), (
-            f"EPIC-001 line should be indented, got: {repr(epic_line)}"
-        )
+        assert epic_line[0] in (
+            " ",
+            "\u251c",
+            "\u2514",
+            "\u2502",
+        ), f"EPIC-001 line should be indented, got: {repr(epic_line)}"
 
     def test_overview_hides_resolved_by_default(self):
         """SPEC-011 (Complete) is NOT in output without show_all."""
@@ -1044,14 +1265,28 @@ class TestOverview:
         """
         # Build a scenario: SPIKE-010 has a parent that is resolved (Complete)
         resolved_parent_nodes = {
-            "EPIC-RESOLVED": {"title": "Done Epic", "status": "Complete", "type": "EPIC", "file": "docs/epic/EPIC-RESOLVED.md", "description": ""},
-            "SPEC-010": {"title": "Spec 10", "status": "In Progress", "type": "SPEC", "file": "docs/spec/SPEC-010.md", "description": ""},
+            "EPIC-RESOLVED": {
+                "title": "Done Epic",
+                "status": "Complete",
+                "type": "EPIC",
+                "file": "docs/epic/EPIC-RESOLVED.md",
+                "description": "",
+            },
+            "SPEC-010": {
+                "title": "Spec 10",
+                "status": "In Progress",
+                "type": "SPEC",
+                "file": "docs/spec/SPEC-010.md",
+                "description": "",
+            },
         }
         resolved_parent_edges = [
             {"from": "SPEC-010", "to": "EPIC-RESOLVED", "type": "parent-epic"},
         ]
         result = overview(resolved_parent_nodes, resolved_parent_edges, show_all=False)
-        assert "=== Unparented ===" in result, f"Expected Unparented section, got:\n{result}"
+        assert (
+            "=== Unparented ===" in result
+        ), f"Expected Unparented section, got:\n{result}"
         unparented_section = result.split("=== Unparented ===")[-1]
         assert "SPEC-010" in unparented_section
 
@@ -1072,7 +1307,9 @@ class TestOverview:
         spec010_line = next((l for l in result.split("\n") if "SPEC-010" in l), None)
         assert spec010_line is not None, "SPEC-010 should be in output"
         # The ready icon → should appear
-        assert "\u2192" in spec010_line, f"Expected → in SPEC-010 line: {repr(spec010_line)}"
+        assert (
+            "\u2192" in spec010_line
+        ), f"Expected → in SPEC-010 line: {repr(spec010_line)}"
 
     def test_overview_blocked_shows_deps(self):
         """Blocked artifacts show '[blocked by: ...]' in their line."""
@@ -1083,9 +1320,9 @@ class TestOverview:
         result = overview(HIER_NODES, extra_edges)
         spec010_line = next((l for l in result.split("\n") if "SPEC-010" in l), None)
         assert spec010_line is not None, "SPEC-010 should be in output"
-        assert "[blocked by:" in spec010_line, (
-            f"Expected '[blocked by:' in SPEC-010 line: {repr(spec010_line)}"
-        )
+        assert (
+            "[blocked by:" in spec010_line
+        ), f"Expected '[blocked by:' in SPEC-010 line: {repr(spec010_line)}"
         assert "EPIC-001" in spec010_line
 
     def test_overview_empty_nodes(self):
@@ -1122,10 +1359,34 @@ class TestInitiativeParentChain:
     """Test parent chain walking includes parent-initiative edges."""
 
     NODES = {
-        "SPEC-010": {"title": "Spec 10", "status": "Ready", "type": "SPEC", "file": "", "description": ""},
-        "EPIC-010": {"title": "Epic 10", "status": "Active", "type": "EPIC", "file": "", "description": ""},
-        "INITIATIVE-001": {"title": "Initiative 1", "status": "Active", "type": "INITIATIVE", "file": "", "description": ""},
-        "VISION-001": {"title": "Vision 1", "status": "Active", "type": "VISION", "file": "", "description": ""},
+        "SPEC-010": {
+            "title": "Spec 10",
+            "status": "Ready",
+            "type": "SPEC",
+            "file": "",
+            "description": "",
+        },
+        "EPIC-010": {
+            "title": "Epic 10",
+            "status": "Active",
+            "type": "EPIC",
+            "file": "",
+            "description": "",
+        },
+        "INITIATIVE-001": {
+            "title": "Initiative 1",
+            "status": "Active",
+            "type": "INITIATIVE",
+            "file": "",
+            "description": "",
+        },
+        "VISION-001": {
+            "title": "Vision 1",
+            "status": "Active",
+            "type": "VISION",
+            "file": "",
+            "description": "",
+        },
     }
 
     EDGES = [
@@ -1137,17 +1398,20 @@ class TestInitiativeParentChain:
     def test_walk_parent_chain_through_initiative(self):
         """Parent chain walks SPEC → EPIC → INITIATIVE → VISION."""
         from specgraph.queries import _walk_parent_chain
+
         chain = _walk_parent_chain("SPEC-010", self.EDGES)
         assert chain == ["EPIC-010", "INITIATIVE-001", "VISION-001"]
 
     def test_find_vision_ancestor_through_initiative(self):
         """Vision ancestor found through initiative layer."""
         from specgraph.queries import _find_vision_ancestor
+
         vision = _find_vision_ancestor("SPEC-010", self.NODES, self.EDGES)
         assert vision == "VISION-001"
 
     def test_find_vision_ancestor_from_initiative(self):
         """Vision ancestor found directly from initiative."""
         from specgraph.queries import _find_vision_ancestor
+
         vision = _find_vision_ancestor("INITIATIVE-001", self.NODES, self.EDGES)
         assert vision == "VISION-001"

@@ -2,6 +2,7 @@
 
 Validates append_decision_record() and read_decision_records().
 """
+
 from __future__ import annotations
 
 import json
@@ -72,7 +73,7 @@ def test_read_skips_malformed_lines(tmp_path):
     logfile.parent.mkdir(parents=True)
     logfile.write_text(
         '{"artifact": "SPEC-001", "action": "approved"}\n'
-        'not valid json\n'
+        "not valid json\n"
         '{"artifact": "SPEC-002", "action": "dropped"}\n'
     )
     records = read_decision_records(str(tmp_path))

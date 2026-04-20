@@ -7,16 +7,22 @@ Renames depends-on to depends-on-artifacts (removed for spikes).
 Usage:
     uv run python3 migrate-frontmatter-fields.py [--dry-run]
 """
+
 import glob
-import re
 import sys
 
 DRY_RUN = "--dry-run" in sys.argv
 
 # Fields to merge into linked-artifacts
 LINKED_FIELDS = [
-    "linked-research", "linked-adrs", "linked-epics", "linked-specs",
-    "linked-stories", "linked-personas", "linked-journeys", "linked-designs",
+    "linked-research",
+    "linked-adrs",
+    "linked-epics",
+    "linked-specs",
+    "linked-stories",
+    "linked-personas",
+    "linked-journeys",
+    "linked-designs",
     "linked-bugs",
 ]
 
@@ -46,7 +52,7 @@ def extract_field(fm_lines, field_name):
         if line.startswith(f"{field_name}:"):
             in_field = True
             # Check for inline value
-            inline = line[len(f"{field_name}:"):].strip()
+            inline = line[len(f"{field_name}:") :].strip()
             if inline and inline != "[]":
                 # Could be a YAML inline list or single value
                 if inline.startswith("["):
@@ -83,8 +89,10 @@ def migrate_file(filepath):
 
     # Check if file has any old fields
     fm_text = "\n".join(fm_lines)
-    has_old = any(f"\n{field}:" in f"\n{fm_text}" or fm_text.startswith(f"{field}:")
-                  for field in LINKED_FIELDS + ["depends-on"])
+    has_old = any(
+        f"\n{field}:" in f"\n{fm_text}" or fm_text.startswith(f"{field}:")
+        for field in LINKED_FIELDS + ["depends-on"]
+    )
     if not has_old:
         return False
 
@@ -143,12 +151,26 @@ def main():
         print("DRY RUN — no files modified\n")
 
     files = sorted(glob.glob("docs/**/*.md", recursive=True))
-    files = [f for f in files if not any(
-        f.endswith(x) for x in ["list-spec.md", "list-epic.md", "list-adr.md",
-                                  "list-spike.md", "list-story.md", "list-journey.md",
-                                  "list-vision.md", "list-persona.md", "list-runbook.md",
-                                  "list-design.md", "README.md"]
-    )]
+    files = [
+        f
+        for f in files
+        if not any(
+            f.endswith(x)
+            for x in [
+                "list-spec.md",
+                "list-epic.md",
+                "list-adr.md",
+                "list-spike.md",
+                "list-story.md",
+                "list-journey.md",
+                "list-vision.md",
+                "list-persona.md",
+                "list-runbook.md",
+                "list-design.md",
+                "README.md",
+            ]
+        )
+    ]
 
     count = 0
     for f in files:

@@ -3,7 +3,6 @@
 import sys
 from pathlib import Path
 
-import pytest
 
 SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(SCRIPTS_DIR))
@@ -107,7 +106,9 @@ class TestExtractListIds:
         assert extract_list_ids({}, "depends-on-artifacts") == []
 
     def test_empty_list(self):
-        assert extract_list_ids({"depends-on-artifacts": []}, "depends-on-artifacts") == []
+        assert (
+            extract_list_ids({"depends-on-artifacts": []}, "depends-on-artifacts") == []
+        )
 
     def test_string_value(self):
         """If field is a string instead of list, extract IDs from it."""
@@ -126,7 +127,9 @@ class TestExtractScalarId:
     """Test extract_scalar_id() for pulling TYPE-NNN from scalar fields."""
 
     def test_basic(self):
-        assert extract_scalar_id({"parent-epic": "EPIC-005"}, "parent-epic") == "EPIC-005"
+        assert (
+            extract_scalar_id({"parent-epic": "EPIC-005"}, "parent-epic") == "EPIC-005"
+        )
 
     def test_missing(self):
         assert extract_scalar_id({}, "parent-epic") is None

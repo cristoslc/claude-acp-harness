@@ -1,4 +1,5 @@
 """Tests for enriched linked-artifacts and artifact-refs parsing in specgraph parser."""
+
 import sys
 from pathlib import Path
 

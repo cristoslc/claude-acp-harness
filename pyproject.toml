@@ -3,7 +3,7 @@ name = "claude-acp-harness"
 version = "0.1.0"
 description = "ACP Harness for Claude Code with tmux I/O management"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "fastapi>=0.124.4",
     "httpx>=0.28.1",
@@ -16,9 +16,21 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=6.0",
-    "black",
-    "flake8",
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.6.0",
+    "mypy>=1.11.0",
+    "pre-commit>=3.8.0",
+    "types-pyyaml>=6.0.0",
+]
+
+observability = [
+    "opentelemetry-api>=1.25.0",
+    "opentelemetry-sdk>=1.25.0",
+    "opentelemetry-instrumentation-fastapi>=0.46b0",
+    "opentelemetry-instrumentation-httpx>=0.46b0",
+    "prometheus-client>=0.20.0",
+    "structlog>=24.1.0",
 ]
 
 [project.scripts]
@@ -27,3 +39,19 @@ claude-harness = "src.acp_harness:main"
 [build-system]
 requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
+ignore_missing_imports = true
+no_warn_unused_ignores = true
+warn_return_any = true
+warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = "scripts.*"
+disallow_untyped_defs = false

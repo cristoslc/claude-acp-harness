@@ -30,7 +30,7 @@ sources:
     freshness_ttl: 30 # days
     proxy_used: false
     content_hash: "--"
-    
+
   - source_id: anthropic-platform-pricing
     title: "Pricing - Claude API Docs"
     author: Anthropic
@@ -41,7 +41,7 @@ sources:
     freshness_ttl: 7 # days
     proxy_used: false
     content_hash: "--"
-    
+
   - source_id: cost-efficient-tools
     title: "13 Best Open-Source AI Agent Tools in 2025: Complete Developer Guide + Setup Tutorials"
     author: Latenode Blog
@@ -52,7 +52,7 @@ sources:
     freshness_ttl: 30 # days
     proxy_used: false
     content_hash: "--"
-    
+
   - source_id: hermes-agent
     title: "Hermes Agent: AI That Learns & Grows With You | Open Source"
     author: Nous Research
@@ -63,7 +63,7 @@ sources:
     freshness_ttl: 30 # days
     proxy_used: false
     content_hash: "--"
-    
+
   - source_id: awesome-agents-curation
     title: "GitHub - kyrolabs/awesome-agents: 🤖 Awesome list of AI Agents"
     author: kyrolabs
@@ -74,7 +74,7 @@ sources:
     freshness_ttl: 14 # days
     proxy_used: false
     content_hash: "--"
-    
+
   - source_id: openai-oauth-authentication
     title: "Authentication – Apps SDK | OpenAI Developers"
     author: OpenAI
@@ -85,7 +85,7 @@ sources:
     freshness_ttl: 7 # days
     proxy_used: false
     content_hash: "f166f9fd64bb3d53f744f699b944c05c7abd8e97c83974d4bbbb97702be42df6"
-    
+
   - source_id: anthropic-oauth-policy
     title: "Authentication - Claude Code Docs"
     author: Anthropic
@@ -97,7 +97,7 @@ sources:
     freshness_ttl: 7 # days
     proxy_used: false
     content_hash: "41b9ce653a75bd70712e2c8c3242944272cc5a848f19dbc6bf3ec332054d017f"
-    
+
   - source_id: google-oauth-authentication
     title: "Authentication with OAuth quickstart | Gemini API | Google AI for Developers"
     author: Google
@@ -109,7 +109,7 @@ sources:
     freshness_ttl: 7 # days
     proxy_used: false
     content_hash: "981ea3763fb3bcdf94c4eb209c8307b786558ac486b1d8c11b9ad3de2f1e0474"
-    
+
   - source_id: openclaw-anthropic-oauth
     title: "Anthropic - OpenClaw"
     author: OpenClaw

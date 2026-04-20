@@ -1,4 +1,5 @@
 """Tests for VisionTree renderer."""
+
 import sys
 from pathlib import Path
 
@@ -11,21 +12,47 @@ from specgraph.tree_renderer import render_vision_tree, render_breadcrumb
 def _make_nodes(**overrides):
     """Helper to create a minimal node set."""
     base = {
-        "VISION-001": {"status": "Active", "type": "VISION", "track": "standing",
-                       "title": "Swain", "priority_weight": "high",
-                       "file": "", "description": ""},
-        "INITIATIVE-001": {"status": "Active", "type": "INITIATIVE", "track": "container",
-                           "title": "Operator Awareness",
-                           "file": "", "description": ""},
-        "EPIC-001": {"status": "Active", "type": "EPIC", "track": "container",
-                     "title": "Chart Hierarchy",
-                     "file": "", "description": ""},
-        "SPEC-001": {"status": "Active", "type": "SPEC", "track": "implementable",
-                     "title": "Tree Renderer",
-                     "file": "", "description": ""},
-        "SPEC-002": {"status": "Active", "type": "SPEC", "track": "implementable",
-                     "title": "CLI Entry Point",
-                     "file": "", "description": ""},
+        "VISION-001": {
+            "status": "Active",
+            "type": "VISION",
+            "track": "standing",
+            "title": "Swain",
+            "priority_weight": "high",
+            "file": "",
+            "description": "",
+        },
+        "INITIATIVE-001": {
+            "status": "Active",
+            "type": "INITIATIVE",
+            "track": "container",
+            "title": "Operator Awareness",
+            "file": "",
+            "description": "",
+        },
+        "EPIC-001": {
+            "status": "Active",
+            "type": "EPIC",
+            "track": "container",
+            "title": "Chart Hierarchy",
+            "file": "",
+            "description": "",
+        },
+        "SPEC-001": {
+            "status": "Active",
+            "type": "SPEC",
+            "track": "implementable",
+            "title": "Tree Renderer",
+            "file": "",
+            "description": "",
+        },
+        "SPEC-002": {
+            "status": "Active",
+            "type": "SPEC",
+            "track": "implementable",
+            "title": "CLI Entry Point",
+            "file": "",
+            "description": "",
+        },
     }
     base.update(overrides)
     return base
@@ -76,11 +103,18 @@ class TestRenderVisionTree:
 
     def test_unanchored_section(self):
         """Artifacts without Vision ancestry appear in Unanchored section."""
-        nodes = _make_nodes(**{
-            "EPIC-099": {"status": "Active", "type": "EPIC", "track": "container",
-                         "title": "Orphan Epic",
-                         "file": "", "description": ""},
-        })
+        nodes = _make_nodes(
+            **{
+                "EPIC-099": {
+                    "status": "Active",
+                    "type": "EPIC",
+                    "track": "container",
+                    "title": "Orphan Epic",
+                    "file": "",
+                    "description": "",
+                },
+            }
+        )
         edges = _make_edges()
         lines = render_vision_tree(
             nodes=set(nodes.keys()),
@@ -137,12 +171,30 @@ class TestRenderVisionTree:
     def test_flattening_when_intermediate_missing(self):
         """Spec directly under Initiative (no Epic) should flatten."""
         nodes = {
-            "VISION-001": {"status": "Active", "type": "VISION", "track": "standing",
-                           "title": "Swain", "file": "", "description": ""},
-            "INITIATIVE-001": {"status": "Active", "type": "INITIATIVE", "track": "container",
-                               "title": "Awareness", "file": "", "description": ""},
-            "SPEC-001": {"status": "Active", "type": "SPEC", "track": "implementable",
-                         "title": "Direct Spec", "file": "", "description": ""},
+            "VISION-001": {
+                "status": "Active",
+                "type": "VISION",
+                "track": "standing",
+                "title": "Swain",
+                "file": "",
+                "description": "",
+            },
+            "INITIATIVE-001": {
+                "status": "Active",
+                "type": "INITIATIVE",
+                "track": "container",
+                "title": "Awareness",
+                "file": "",
+                "description": "",
+            },
+            "SPEC-001": {
+                "status": "Active",
+                "type": "SPEC",
+                "track": "implementable",
+                "title": "Direct Spec",
+                "file": "",
+                "description": "",
+            },
         }
         edges = [
             {"from": "INITIATIVE-001", "to": "VISION-001", "type": "parent-vision"},
@@ -160,12 +212,30 @@ class TestRenderVisionTree:
     def test_sort_key(self):
         """Custom sort_key orders siblings."""
         nodes = {
-            "VISION-001": {"status": "Active", "type": "VISION", "track": "standing",
-                           "title": "Swain", "file": "", "description": ""},
-            "EPIC-001": {"status": "Active", "type": "EPIC", "track": "container",
-                         "title": "Zebra Epic", "file": "", "description": ""},
-            "EPIC-002": {"status": "Active", "type": "EPIC", "track": "container",
-                         "title": "Alpha Epic", "file": "", "description": ""},
+            "VISION-001": {
+                "status": "Active",
+                "type": "VISION",
+                "track": "standing",
+                "title": "Swain",
+                "file": "",
+                "description": "",
+            },
+            "EPIC-001": {
+                "status": "Active",
+                "type": "EPIC",
+                "track": "container",
+                "title": "Zebra Epic",
+                "file": "",
+                "description": "",
+            },
+            "EPIC-002": {
+                "status": "Active",
+                "type": "EPIC",
+                "track": "container",
+                "title": "Alpha Epic",
+                "file": "",
+                "description": "",
+            },
         }
         edges = [
             {"from": "EPIC-001", "to": "VISION-001", "type": "parent-vision"},
@@ -184,10 +254,18 @@ class TestRenderVisionTree:
 
     def test_phase_filter(self):
         """Phase filter excludes artifacts not in the specified phases."""
-        nodes = _make_nodes(**{
-            "SPEC-003": {"status": "Complete", "type": "SPEC", "track": "implementable",
-                         "title": "Done Spec", "file": "", "description": ""},
-        })
+        nodes = _make_nodes(
+            **{
+                "SPEC-003": {
+                    "status": "Complete",
+                    "type": "SPEC",
+                    "track": "implementable",
+                    "title": "Done Spec",
+                    "file": "",
+                    "description": "",
+                },
+            }
+        )
         edges = _make_edges() + [
             {"from": "SPEC-003", "to": "EPIC-001", "type": "parent-epic"},
         ]
@@ -233,10 +311,18 @@ class TestRenderBreadcrumb:
 
     def test_orphan(self):
         """Orphan artifact shows just its own title."""
-        nodes = _make_nodes(**{
-            "EPIC-099": {"status": "Active", "type": "EPIC", "track": "container",
-                         "title": "Orphan", "file": "", "description": ""},
-        })
+        nodes = _make_nodes(
+            **{
+                "EPIC-099": {
+                    "status": "Active",
+                    "type": "EPIC",
+                    "track": "container",
+                    "title": "Orphan",
+                    "file": "",
+                    "description": "",
+                },
+            }
+        )
         edges = _make_edges()
         result = render_breadcrumb("EPIC-099", nodes, edges)
         assert result == "Orphan"

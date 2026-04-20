@@ -26,7 +26,9 @@ def test_symlinked_entrypoint_resolves_default_template(tmp_path):
             {
                 "version": "0.99.0-alpha",
                 "date": "2026-04-01",
-                "features": [{"heading": "Test Feature", "body": "Rendered from template."}],
+                "features": [
+                    {"heading": "Test Feature", "body": "Rendered from template."}
+                ],
                 "roadmap": [],
                 "research": [],
                 "supporting": [],

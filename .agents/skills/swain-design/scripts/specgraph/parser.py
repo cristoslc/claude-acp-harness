@@ -44,9 +44,7 @@ def _extract_type(artifact_id: str) -> str:
     return m.group(1) if m else artifact_id
 
 
-def _extract_description(
-    raw_fields: dict, body: str, max_len: int = 120
-) -> str:
+def _extract_description(raw_fields: dict, body: str, max_len: int = 120) -> str:
     """Extract a one-line description for an artifact.
 
     Priority: question (spikes) > description (frontmatter) > first body paragraph.

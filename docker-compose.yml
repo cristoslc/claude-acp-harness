@@ -1,0 +1,49 @@
+services:
+  claude-acp-harness:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: claude-acp-harness:latest
+    container_name: claude-acp-harness
+    ports:
+      - "8000:8000"
+    environment:
+      - ACP_LOG_LEVEL=INFO
+      - ACP_METRICS_ENABLED=true
+      - ACP_OTLP_ENDPOINT=${OTLP_ENDPOINT:-}
+      - OTEL_SERVICE_NAME=claude-acp-harness
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTLP_ENDPOINT:-}
+    volumes:
+      # Mount for tmux session persistence
+      - tmux-sessions:/app/.tmux-sessions
+      # Mount for logs
+      - ./logs:/app/logs
+      # IMPORTANT: Mount Claude Code credentials from host
+      # Users must authenticate on host first with: claude --auth
+      - ~/.config/claude:/root/.config/claude:ro
+      # Optional: mount project files for Claude to work with
+      - ./workspace:/workspace:ro
+    # Required for tmux to function properly
+    stdin_open: true
+    tty: true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    # Health check
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/acp/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+
+volumes:
+  tmux-sessions:
+    driver: local

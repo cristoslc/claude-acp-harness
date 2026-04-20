@@ -3,6 +3,7 @@
 Validates render_session_roadmap() produces all 7 sections,
 filters by focus lane, and uses lightweight evidence pointers.
 """
+
 from __future__ import annotations
 
 import sys
@@ -202,6 +203,7 @@ def test_walk_away_signal_present():
 def test_decision_records_section_reads_jsonl(tmp_path):
     """Decision records section should render entries from JSONL log."""
     import json
+
     jsonl = tmp_path / ".agents" / "session-decisions.jsonl"
     jsonl.parent.mkdir(parents=True)
     entry = {
@@ -235,7 +237,9 @@ def test_decision_records_empty_when_no_log():
         repo_root="/tmp/nonexistent-test-path",
     )
     records_section = _extract_section(md, "## Decision Records")
-    assert "No decisions recorded" in records_section or len(records_section.strip()) > 0
+    assert (
+        "No decisions recorded" in records_section or len(records_section.strip()) > 0
+    )
 
 
 # --- Helper ---

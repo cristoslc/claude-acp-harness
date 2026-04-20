@@ -8,17 +8,27 @@ All lenses and surface integrations consume this renderer. It handles:
 - Depth control and phase filtering
 - Unanchored section for parentless artifacts
 """
+
 from __future__ import annotations
 
-from typing import Callable, Optional
+from typing import Callable
 
 from specgraph.resolved import is_resolved as _is_resolved_raw
 
 _PARENT_EDGE_TYPES = {"parent-epic", "parent-vision", "parent-initiative"}
-_CHILD_TYPE_LABELS = {"SPEC": "spec", "SPIKE": "spike", "ADR": "adr", "DESIGN": "design",
-                      "RUNBOOK": "runbook"}
-_STATUS_ICONS = {"ready": "\u2192", "blocked": "\u2298", "in_progress": "\u00b7",
-                 "resolved": "\u2713"}
+_CHILD_TYPE_LABELS = {
+    "SPEC": "spec",
+    "SPIKE": "spike",
+    "ADR": "adr",
+    "DESIGN": "design",
+    "RUNBOOK": "runbook",
+}
+_STATUS_ICONS = {
+    "ready": "\u2192",
+    "blocked": "\u2298",
+    "in_progress": "\u00b7",
+    "resolved": "\u2713",
+}
 
 
 def _node_is_resolved(artifact_id: str, nodes: dict) -> bool:
@@ -61,8 +71,9 @@ def _get_children(parent_id: str, edges: list[dict]) -> list[str]:
     return children
 
 
-def _walk_to_vision(artifact_id: str, edges: list[dict],
-                    visited: set | None = None) -> list[str]:
+def _walk_to_vision(
+    artifact_id: str, edges: list[dict], visited: set | None = None
+) -> list[str]:
     """Walk parent edges from artifact up to Vision root.
 
     Returns path [self, parent, ..., vision] (closest ancestor first).
@@ -75,20 +86,23 @@ def _walk_to_vision(artifact_id: str, edges: list[dict],
         return [artifact_id]
     visited.add(artifact_id)
     chain = [artifact_id]
-    parent_edges = [e for e in edges
-                    if e["from"] == artifact_id and e["type"] in _PARENT_EDGE_TYPES]
+    parent_edges = [
+        e for e in edges if e["from"] == artifact_id and e["type"] in _PARENT_EDGE_TYPES
+    ]
     if parent_edges:
         # Pick the most specific parent edge (parent-epic > parent-initiative > parent-vision)
         parent_edges.sort(
-            key=lambda e: _PARENT_SPECIFICITY.get(e["type"], 0), reverse=True)
+            key=lambda e: _PARENT_SPECIFICITY.get(e["type"], 0), reverse=True
+        )
         best = parent_edges[0]
         parent_chain = _walk_to_vision(best["to"], edges, visited)
         chain.extend(parent_chain)
     return chain
 
 
-def _child_count_label(parent_id: str, all_nodes: dict, edges: list[dict],
-                       phase_filter: set[str] | None) -> str:
+def _child_count_label(
+    parent_id: str, all_nodes: dict, edges: list[dict], phase_filter: set[str] | None
+) -> str:
     """Compute child count summary like '3 specs, 1 spike'."""
     children = _get_children(parent_id, edges)
     counts: dict[str, int] = {}
@@ -118,33 +132,43 @@ def _compute_ready_set(nodes: dict, edges: list[dict]) -> set[str]:
     for aid in nodes:
         if _node_is_resolved(aid, nodes):
             continue
-        deps = [e["to"] for e in edges
-                if e["from"] == aid and e["type"] == "depends-on"]
+        deps = [
+            e["to"] for e in edges if e["from"] == aid and e["type"] == "depends-on"
+        ]
         if all(_node_is_resolved(d, nodes) for d in deps):
             ready.add(aid)
     return ready
 
 
-def _status_icon(artifact_id: str, all_nodes: dict, edges: list[dict],
-                 ready_set: set[str]) -> str:
+def _status_icon(
+    artifact_id: str, all_nodes: dict, edges: list[dict], ready_set: set[str]
+) -> str:
     """Return status icon for an artifact."""
     if _node_is_resolved(artifact_id, all_nodes):
         return _STATUS_ICONS["resolved"]
     if artifact_id in ready_set:
         return _STATUS_ICONS["ready"]
-    deps = [e["to"] for e in edges
-            if e["from"] == artifact_id and e["type"] == "depends-on"]
+    deps = [
+        e["to"] for e in edges if e["from"] == artifact_id and e["type"] == "depends-on"
+    ]
     unresolved_deps = [d for d in deps if not _node_is_resolved(d, all_nodes)]
     if unresolved_deps:
         return _STATUS_ICONS["blocked"]
     return _STATUS_ICONS["in_progress"]
 
 
-def _render_node_line(artifact_id: str, all_nodes: dict, edges: list[dict],
-                      ready_set: set[str], annotations: dict[str, str],
-                      show_ids: bool, depth: int, current_depth: int,
-                      phase_filter: set[str] | None,
-                      is_structural: bool) -> str:
+def _render_node_line(
+    artifact_id: str,
+    all_nodes: dict,
+    edges: list[dict],
+    ready_set: set[str],
+    annotations: dict[str, str],
+    show_ids: bool,
+    depth: int,
+    current_depth: int,
+    phase_filter: set[str] | None,
+    is_structural: bool,
+) -> str:
     """Render a single node's display text."""
     node = all_nodes.get(artifact_id, {})
     title = node.get("title", artifact_id)
@@ -169,12 +193,23 @@ def _render_node_line(artifact_id: str, all_nodes: dict, edges: list[dict],
         return f"{icon} {title}{id_suffix}{child_label}{annotation}"
 
 
-def _render_subtree(artifact_id: str, all_nodes: dict, edges: list[dict],
-                    ready_set: set[str], annotations: dict[str, str],
-                    sort_key: Callable, show_ids: bool, depth: int,
-                    phase_filter: set[str] | None, display_nodes: set[str],
-                    current_depth: int, prefix: str, is_last: bool,
-                    lines: list[str], visited: set[str]) -> None:
+def _render_subtree(
+    artifact_id: str,
+    all_nodes: dict,
+    edges: list[dict],
+    ready_set: set[str],
+    annotations: dict[str, str],
+    sort_key: Callable,
+    show_ids: bool,
+    depth: int,
+    phase_filter: set[str] | None,
+    display_nodes: set[str],
+    current_depth: int,
+    prefix: str,
+    is_last: bool,
+    lines: list[str],
+    visited: set[str],
+) -> None:
     """Recursively render a subtree with elbow connectors."""
     if artifact_id in visited:
         return
@@ -197,9 +232,18 @@ def _render_subtree(artifact_id: str, all_nodes: dict, edges: list[dict],
     else:
         child_prefix = prefix + ("    " if is_last else "\u2502   ")
 
-    line = _render_node_line(artifact_id, all_nodes, edges, ready_set,
-                             annotations, show_ids, depth, current_depth,
-                             phase_filter, is_structural)
+    line = _render_node_line(
+        artifact_id,
+        all_nodes,
+        edges,
+        ready_set,
+        annotations,
+        show_ids,
+        depth,
+        current_depth,
+        phase_filter,
+        is_structural,
+    )
     lines.append(f"{prefix}{connector}{line}")
 
     if current_depth >= depth:
@@ -214,19 +258,32 @@ def _render_subtree(artifact_id: str, all_nodes: dict, edges: list[dict],
                 continue
         visible_children.append(cid)
 
-    visible_children = sorted(visible_children,
-                              key=lambda c: sort_key(c, all_nodes, edges))
+    visible_children = sorted(
+        visible_children, key=lambda c: sort_key(c, all_nodes, edges)
+    )
 
     for i, child_id in enumerate(visible_children):
-        is_last_child = (i == len(visible_children) - 1)
-        _render_subtree(child_id, all_nodes, edges, ready_set, annotations,
-                        sort_key, show_ids, depth, phase_filter, display_nodes,
-                        current_depth + 1, child_prefix, is_last_child,
-                        lines, visited)
+        is_last_child = i == len(visible_children) - 1
+        _render_subtree(
+            child_id,
+            all_nodes,
+            edges,
+            ready_set,
+            annotations,
+            sort_key,
+            show_ids,
+            depth,
+            phase_filter,
+            display_nodes,
+            current_depth + 1,
+            child_prefix,
+            is_last_child,
+            lines,
+            visited,
+        )
 
 
-def _default_sort_key(artifact_id: str, all_nodes: dict,
-                      edges: list[dict]) -> str:
+def _default_sort_key(artifact_id: str, all_nodes: dict, edges: list[dict]) -> str:
     """Default sort: alphabetical by title."""
     return all_nodes.get(artifact_id, {}).get("title", artifact_id).lower()
 
@@ -272,9 +329,8 @@ def render_vision_tree(
     render_nodes = display_nodes | all_ancestors
 
     vision_roots = sorted(
-        [nid for nid in render_nodes
-         if all_nodes.get(nid, {}).get("type") == "VISION"],
-        key=lambda v: sort_key(v, all_nodes, edges)
+        [nid for nid in render_nodes if all_nodes.get(nid, {}).get("type") == "VISION"],
+        key=lambda v: sort_key(v, all_nodes, edges),
     )
 
     # Find unanchored artifacts
@@ -291,15 +347,28 @@ def render_vision_tree(
     for i, vid in enumerate(vision_roots):
         if i > 0:
             lines.append("")
-        _render_subtree(vid, all_nodes, edges, ready_set, annotations,
-                        sort_key, show_ids, depth, phase_filter, display_nodes,
-                        0, "", True, lines, visited)
+        _render_subtree(
+            vid,
+            all_nodes,
+            edges,
+            ready_set,
+            annotations,
+            sort_key,
+            show_ids,
+            depth,
+            phase_filter,
+            display_nodes,
+            0,
+            "",
+            True,
+            lines,
+            visited,
+        )
 
     if unanchored:
         lines.append("")
         lines.append("=== Unanchored ===")
-        for uid in sorted(unanchored,
-                          key=lambda u: sort_key(u, all_nodes, edges)):
+        for uid in sorted(unanchored, key=lambda u: sort_key(u, all_nodes, edges)):
             node = all_nodes.get(uid, {})
             title = node.get("title", uid)
             id_suffix = f" [{uid}]" if show_ids else ""
@@ -311,14 +380,14 @@ def render_vision_tree(
                 )
                 lines.append(f"\u26a0 {title}{id_suffix} (under: {ancestors})")
             else:
-                lines.append(
-                    f"\u26a0 {title}{id_suffix} [no Vision ancestry]")
+                lines.append(f"\u26a0 {title}{id_suffix} [no Vision ancestry]")
 
     lines.append("")
     lines.append("---")
     lines.append(
         "\u2192 ready   \u2298 blocked   \u00b7 in progress   "
-        "\u2713 complete (hidden by default)")
+        "\u2713 complete (hidden by default)"
+    )
 
     return lines
 
@@ -333,8 +402,5 @@ def render_breadcrumb(
     Returns string like: "Swain > Operator Awareness > Chart Hierarchy"
     """
     chain = _walk_to_vision(artifact_id, edges)
-    titles = [
-        all_nodes.get(aid, {}).get("title", aid)
-        for aid in reversed(chain)
-    ]
+    titles = [all_nodes.get(aid, {}).get("title", aid) for aid in reversed(chain)]
     return " > ".join(titles)

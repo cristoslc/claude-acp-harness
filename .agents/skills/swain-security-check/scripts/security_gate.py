@@ -40,6 +40,7 @@ _SEVERITY_TO_PRIORITY: dict[str, str] = {
 # Gate trigger
 # ---------------------------------------------------------------------------
 
+
 def should_run_gate(
     task_title: str,
     task_tags: list[str] | None,
@@ -69,6 +70,7 @@ def should_run_gate(
 # ---------------------------------------------------------------------------
 # Changed file discovery
 # ---------------------------------------------------------------------------
+
 
 def get_changed_files() -> list[str]:
     """Get list of files changed since last commit via git diff.
@@ -103,6 +105,7 @@ def get_changed_files() -> list[str]:
 # ---------------------------------------------------------------------------
 # Finding -> ticket filing
 # ---------------------------------------------------------------------------
+
 
 def file_finding_as_ticket(
     finding: dict[str, Any],
@@ -150,11 +153,17 @@ def file_finding_as_ticket(
     try:
         create_proc = subprocess.run(
             [
-                "tk", "create", title,
-                "-d", body,
-                "-t", "bug",
-                "-p", priority,
-                "--tags", "security-finding",
+                "tk",
+                "create",
+                title,
+                "-d",
+                body,
+                "-t",
+                "bug",
+                "-p",
+                priority,
+                "--tags",
+                "security-finding",
             ],
             capture_output=True,
             text=True,
@@ -187,6 +196,7 @@ def file_finding_as_ticket(
 # ---------------------------------------------------------------------------
 # Gate orchestrator
 # ---------------------------------------------------------------------------
+
 
 def run_gate(
     changed_files: list[str],

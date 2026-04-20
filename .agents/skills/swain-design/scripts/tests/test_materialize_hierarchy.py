@@ -16,7 +16,9 @@ from specgraph.materialize import materialize_children
 def test_materialize_creates_direct_child_symlinks(tmp_path):
     repo_root = tmp_path
     vision_dir = repo_root / "docs" / "vision" / "Active" / "(VISION-001)-Root"
-    initiative_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    initiative_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    )
     epic_dir = repo_root / "docs" / "epic" / "Active" / "(EPIC-001)-Work"
     spec_dir = repo_root / "docs" / "spec" / "Proposed" / "(SPEC-001)-Child"
     for path in (vision_dir, initiative_dir, epic_dir, spec_dir):
@@ -86,7 +88,9 @@ def test_materialize_creates_direct_child_symlinks(tmp_path):
 
 def test_materialize_uses_relative_symlink_targets(tmp_path):
     repo_root = tmp_path
-    parent_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    parent_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    )
     child_dir = repo_root / "docs" / "spec" / "Proposed" / "(SPEC-001)-Child"
     parent_dir.mkdir(parents=True)
     child_dir.mkdir(parents=True)
@@ -190,8 +194,12 @@ def test_materialize_falls_back_to_unparented_when_parent_is_missing(tmp_path):
 def test_materialize_removes_stale_child_symlinks(tmp_path):
     repo_root = tmp_path
     vision_dir = repo_root / "docs" / "vision" / "Active" / "(VISION-001)-Root"
-    old_child_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Old"
-    new_child_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-002)-New"
+    old_child_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Old"
+    )
+    new_child_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-002)-New"
+    )
     for path in (vision_dir, old_child_dir, new_child_dir):
         path.mkdir(parents=True)
 
@@ -231,7 +239,9 @@ def test_materialize_removes_stale_child_symlinks(tmp_path):
 
 def test_materialize_replaces_stale_child_symlink_targets(tmp_path):
     repo_root = tmp_path
-    parent_dir = repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    parent_dir = (
+        repo_root / "docs" / "initiative" / "Active" / "(INITIATIVE-001)-Parent"
+    )
     old_child_dir = repo_root / "docs" / "spec" / "Complete" / "(SPEC-001)-Child"
     new_child_dir = repo_root / "docs" / "spec" / "Active" / "(SPEC-001)-Child"
     for path in (parent_dir, old_child_dir, new_child_dir):
@@ -364,7 +374,7 @@ def test_materialize_creates_related_symlinks(tmp_path):
     for path in (epic_dir, design_dir):
         path.mkdir(parents=True)
         (path / "placeholder.md").write_text("# placeholder\n", encoding="utf-8")
-    
+
     projection = [
         {
             "artifact": "EPIC-001",
@@ -389,9 +399,9 @@ def test_materialize_creates_related_symlinks(tmp_path):
             "depends_on_artifacts": [],
         },
     ]
-    
+
     materialize_children(repo_root, projection)
-    
+
     related_link = epic_dir / "_Related" / "(DESIGN-001)-Arch"
     assert related_link.is_symlink()
     assert related_link.resolve() == design_dir.resolve()
@@ -405,7 +415,7 @@ def test_materialize_creates_depends_on_symlinks(tmp_path):
     for path in (spec1_dir, spec2_dir):
         path.mkdir(parents=True)
         (path / "placeholder.md").write_text("# placeholder\n", encoding="utf-8")
-    
+
     projection = [
         {
             "artifact": "SPEC-251",
@@ -430,9 +440,9 @@ def test_materialize_creates_depends_on_symlinks(tmp_path):
             "depends_on_artifacts": [],
         },
     ]
-    
+
     materialize_children(repo_root, projection)
-    
+
     depends_link = spec1_dir / "_Depends-On" / "(SPEC-252)-Second"
     assert depends_link.is_symlink()
     assert depends_link.resolve() == spec2_dir.resolve()
@@ -444,7 +454,7 @@ def test_materialize_skips_empty_relationship_dirs(tmp_path):
     spec_dir = repo_root / "docs" / "spec" / "Proposed" / "(SPEC-003)-Solo"
     spec_dir.mkdir(parents=True)
     (spec_dir / "placeholder.md").write_text("# placeholder\n", encoding="utf-8")
-    
+
     projection = [
         {
             "artifact": "SPEC-003",
@@ -458,9 +468,9 @@ def test_materialize_skips_empty_relationship_dirs(tmp_path):
             "depends_on_artifacts": [],
         },
     ]
-    
+
     materialize_children(repo_root, projection)
-    
+
     assert not (spec_dir / "_Related").exists()
     assert not (spec_dir / "_Depends-On").exists()
 
@@ -471,7 +481,7 @@ def test_materialize_skips_broken_references(tmp_path):
     spec_dir = repo_root / "docs" / "spec" / "Proposed" / "(SPEC-004)-Broken"
     spec_dir.mkdir(parents=True)
     (spec_dir / "placeholder.md").write_text("# placeholder\n", encoding="utf-8")
-    
+
     projection = [
         {
             "artifact": "SPEC-254",
@@ -485,7 +495,7 @@ def test_materialize_skips_broken_references(tmp_path):
             "depends_on_artifacts": [],
         },
     ]
-    
+
     materialize_children(repo_root, projection)  # Should not raise
 
     # No _Related/ created because no valid targets
@@ -533,7 +543,9 @@ def test_materialize_skips_flat_file_artifacts(tmp_path):
 
     # No shadow directory created for the flat-file ADR
     shadow = repo_root / "docs" / "adr" / "Active" / "(ADR-001)-Flat-Decision"
-    assert not shadow.exists(), "Materializer must not create directories for flat-file artifacts"
+    assert (
+        not shadow.exists()
+    ), "Materializer must not create directories for flat-file artifacts"
 
     # No _Related/ anywhere for the flat-file artifact
     assert not (shadow / "_Related").exists()
@@ -580,4 +592,6 @@ def test_materialize_skips_placed_child_when_parent_is_flat(tmp_path):
 
     # No shadow directory created for the flat-file parent
     shadow = repo_root / "docs" / "epic" / "Active" / "(EPIC-001)-Parent"
-    assert not shadow.exists(), "Materializer must not create directories for flat-file parents"
+    assert (
+        not shadow.exists()
+    ), "Materializer must not create directories for flat-file parents"

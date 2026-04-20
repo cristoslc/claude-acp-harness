@@ -167,12 +167,14 @@ def build_graph(
         # Collect artifact dict for xref computation
         content = filepath.read_text(encoding="utf-8")
         body = get_body(content)
-        artifact_dicts.append({
-            "id": aid,
-            "file": artifact.file,
-            "body": body,
-            "frontmatter": fields,
-        })
+        artifact_dicts.append(
+            {
+                "id": aid,
+                "file": artifact.file,
+                "body": body,
+                "frontmatter": fields,
+            }
+        )
 
     if duplicates:
         details = "; ".join(
@@ -186,15 +188,17 @@ def build_graph(
     # Append dual-parent warnings to xref
     for aid, node in nodes.items():
         if node.pop("_dual_parent_warning", False):
-            xref.append({
-                "artifact": aid,
-                "file": node.get("file", ""),
-                "body_not_in_frontmatter": [],
-                "frontmatter_not_in_body": [],
-                "missing_reciprocal": [],
-                "dual_parent": True,
-                "dual_parent_message": f"{aid} has both parent-epic and parent-initiative — use exactly one",
-            })
+            xref.append(
+                {
+                    "artifact": aid,
+                    "file": node.get("file", ""),
+                    "body_not_in_frontmatter": [],
+                    "frontmatter_not_in_body": [],
+                    "missing_reciprocal": [],
+                    "dual_parent": True,
+                    "dual_parent_message": f"{aid} has both parent-epic and parent-initiative — use exactly one",
+                }
+            )
 
     generated = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
@@ -213,14 +217,11 @@ def _select_direct_parent(artifact_id: str, edges: list[dict]) -> str | None:
     Ties at the same specificity are resolved deterministically by parent ID.
     """
     parent_edges = [
-        e for e in edges
-        if e["from"] == artifact_id and e["type"] in _PARENT_EDGE_TYPES
+        e for e in edges if e["from"] == artifact_id and e["type"] in _PARENT_EDGE_TYPES
     ]
     if not parent_edges:
         return None
-    parent_edges.sort(
-        key=lambda e: (-_PARENT_SPECIFICITY.get(e["type"], 0), e["to"])
-    )
+    parent_edges.sort(key=lambda e: (-_PARENT_SPECIFICITY.get(e["type"], 0), e["to"]))
     return parent_edges[0]["to"]
 
 
@@ -256,33 +257,37 @@ def build_projection(nodes: dict[str, dict], edges: list[dict]) -> list[dict[str
                 placement_state = "standalone"
             else:
                 placement_state = "unparented"
-        
+
         # Extract relationship IDs from edges
         linked = {
-            e["to"] for e in edges
+            e["to"]
+            for e in edges
             if e["from"] == artifact_id
             and e["type"] in ("linked-artifacts", "artifact-refs")
             and e["to"] in nodes
         }
-        
+
         depends = {
-            e["to"] for e in edges
+            e["to"]
+            for e in edges
             if e["from"] == artifact_id
             and e["type"] == "depends-on"
             and e["to"] in nodes
         }
-        
-        projection.append({
-            "artifact": artifact_id,
-            "type": node.get("type", ""),
-            "status": node.get("status", ""),
-            "canonical_file": node.get("file", ""),
-            "canonical_path": _canonical_path(artifact_id, node.get("file", "")),
-            "direct_parent": direct_parent,
-            "placement_state": placement_state,
-            "linked_artifacts": sorted(linked),
-            "depends_on_artifacts": sorted(depends),
-        })
+
+        projection.append(
+            {
+                "artifact": artifact_id,
+                "type": node.get("type", ""),
+                "status": node.get("status", ""),
+                "canonical_file": node.get("file", ""),
+                "canonical_path": _canonical_path(artifact_id, node.get("file", "")),
+                "direct_parent": direct_parent,
+                "placement_state": placement_state,
+                "linked_artifacts": sorted(linked),
+                "depends_on_artifacts": sorted(depends),
+            }
+        )
     return projection
 
 

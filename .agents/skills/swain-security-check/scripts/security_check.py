@@ -37,6 +37,7 @@ from scanner_availability import ScannerResult, check_all_scanners
 # Data structures
 # ---------------------------------------------------------------------------
 
+
 @dataclass
 class ScanResult:
     """Result of a full security scan across all scanners."""
@@ -95,13 +96,18 @@ def _make_finding(
 # Gitleaks scanner
 # ---------------------------------------------------------------------------
 
+
 def _run_gitleaks(directory: str, scanner_info: ScannerResult) -> list[dict[str, Any]]:
     """Run gitleaks and return normalized findings."""
     cmd = [
-        "gitleaks", "detect",
-        "--source", directory,
-        "--report-format", "json",
-        "--report-path", "/dev/stdout",
+        "gitleaks",
+        "detect",
+        "--source",
+        directory,
+        "--report-format",
+        "json",
+        "--report-path",
+        "/dev/stdout",
         "--no-git",
     ]
     try:
@@ -126,14 +132,16 @@ def _run_gitleaks(directory: str, scanner_info: ScannerResult) -> list[dict[str,
 
     findings = []
     for item in raw:
-        findings.append(_make_finding(
-            scanner="gitleaks",
-            file_path=item.get("File", "unknown"),
-            line=item.get("StartLine", 0),
-            severity="critical",
-            description=item.get("Description", "Secret detected"),
-            remediation="Rotate the secret, remove from source control, and add to .gitignore",
-        ))
+        findings.append(
+            _make_finding(
+                scanner="gitleaks",
+                file_path=item.get("File", "unknown"),
+                line=item.get("StartLine", 0),
+                severity="critical",
+                description=item.get("Description", "Secret detected"),
+                remediation="Rotate the secret, remove from source control, and add to .gitignore",
+            )
+        )
     return findings
 
 
@@ -141,12 +149,18 @@ def _run_gitleaks(directory: str, scanner_info: ScannerResult) -> list[dict[str,
 # Semgrep scanner
 # ---------------------------------------------------------------------------
 
+
 def _run_semgrep(directory: str, scanner_info: ScannerResult) -> list[dict[str, Any]]:
     """Run semgrep with ai-best-practices config and return normalized findings."""
     path = scanner_info.path or "semgrep"
     # If path contains "uv run", split it into parts
     if path.startswith("uv run"):
-        cmd_parts = path.split() + ["--config", "p/ai-best-practices", "--json", directory]
+        cmd_parts = path.split() + [
+            "--config",
+            "p/ai-best-practices",
+            "--json",
+            directory,
+        ]
     else:
         cmd_parts = [path, "--config", "p/ai-best-practices", "--json", directory]
 
@@ -168,14 +182,18 @@ def _run_semgrep(directory: str, scanner_info: ScannerResult) -> list[dict[str, 
     findings = []
     for item in data.get("results", []):
         severity_raw = item.get("extra", {}).get("severity", "WARNING")
-        findings.append(_make_finding(
-            scanner="semgrep",
-            file_path=item.get("path", "unknown"),
-            line=item.get("start", {}).get("line", 0),
-            severity=_normalize_severity(severity_raw),
-            description=item.get("extra", {}).get("message", item.get("check_id", "Semgrep finding")),
-            remediation="Review and fix the flagged pattern per semgrep rule guidance",
-        ))
+        findings.append(
+            _make_finding(
+                scanner="semgrep",
+                file_path=item.get("path", "unknown"),
+                line=item.get("start", {}).get("line", 0),
+                severity=_normalize_severity(severity_raw),
+                description=item.get("extra", {}).get(
+                    "message", item.get("check_id", "Semgrep finding")
+                ),
+                remediation="Review and fix the flagged pattern per semgrep rule guidance",
+            )
+        )
     return findings
 
 
@@ -183,7 +201,10 @@ def _run_semgrep(directory: str, scanner_info: ScannerResult) -> list[dict[str, 
 # OSV-scanner
 # ---------------------------------------------------------------------------
 
-def _run_osv_scanner(directory: str, scanner_info: ScannerResult) -> list[dict[str, Any]]:
+
+def _run_osv_scanner(
+    directory: str, scanner_info: ScannerResult
+) -> list[dict[str, Any]]:
     """Run osv-scanner and return normalized findings."""
     cmd = ["osv-scanner", "--format", "json", "--recursive", directory]
     try:
@@ -210,20 +231,23 @@ def _run_osv_scanner(directory: str, scanner_info: ScannerResult) -> list[dict[s
                 db_specific = vuln.get("database_specific", {})
                 if db_specific.get("severity"):
                     severity_val = _normalize_severity(db_specific["severity"])
-                findings.append(_make_finding(
-                    scanner="osv-scanner",
-                    file_path=source_path,
-                    line=0,
-                    severity=severity_val,
-                    description=f"{vuln.get('id', 'Unknown CVE')}: {vuln.get('summary', 'Vulnerability detected')}",
-                    remediation="Update the affected dependency to a patched version",
-                ))
+                findings.append(
+                    _make_finding(
+                        scanner="osv-scanner",
+                        file_path=source_path,
+                        line=0,
+                        severity=severity_val,
+                        description=f"{vuln.get('id', 'Unknown CVE')}: {vuln.get('summary', 'Vulnerability detected')}",
+                        remediation="Update the affected dependency to a patched version",
+                    )
+                )
     return findings
 
 
 # ---------------------------------------------------------------------------
 # Trivy scanner (fallback for osv-scanner)
 # ---------------------------------------------------------------------------
+
 
 def _run_trivy(directory: str, scanner_info: ScannerResult) -> list[dict[str, Any]]:
     """Run trivy and return normalized findings."""
@@ -247,20 +271,23 @@ def _run_trivy(directory: str, scanner_info: ScannerResult) -> list[dict[str, An
     for result_group in data.get("Results", []):
         target = result_group.get("Target", "unknown")
         for vuln in result_group.get("Vulnerabilities", []):
-            findings.append(_make_finding(
-                scanner="trivy",
-                file_path=target,
-                line=0,
-                severity=_normalize_severity(vuln.get("Severity", "MEDIUM")),
-                description=f"{vuln.get('VulnerabilityID', 'Unknown')}: {vuln.get('Title', 'Vulnerability detected')}",
-                remediation=f"Update {vuln.get('PkgName', 'package')} to {vuln.get('FixedVersion', 'latest patched version')}",
-            ))
+            findings.append(
+                _make_finding(
+                    scanner="trivy",
+                    file_path=target,
+                    line=0,
+                    severity=_normalize_severity(vuln.get("Severity", "MEDIUM")),
+                    description=f"{vuln.get('VulnerabilityID', 'Unknown')}: {vuln.get('Title', 'Vulnerability detected')}",
+                    remediation=f"Update {vuln.get('PkgName', 'package')} to {vuln.get('FixedVersion', 'latest patched version')}",
+                )
+            )
     return findings
 
 
 # ---------------------------------------------------------------------------
 # Context-file scanner (built-in)
 # ---------------------------------------------------------------------------
+
 
 def _run_context_file_scanner(directory: str) -> list[dict[str, Any]]:
     """Run the built-in context-file injection scanner."""
@@ -281,15 +308,21 @@ def _run_context_file_scanner(directory: str) -> list[dict[str, Any]]:
             "I": "Remove hidden instructions from HTML comments",
             "J": "Remove the external fetch + exec pattern",
         }
-        findings.append(_make_finding(
-            scanner="context-file-scanner",
-            file_path=item.get("file_path", "unknown"),
-            line=item.get("line_number", 0),
-            severity=item.get("severity", "medium"),
-            description=item.get("description", "Context file injection pattern detected"),
-            remediation=remediation_map.get(cat, "Review and remove the suspicious pattern"),
-            category=cat,
-        ))
+        findings.append(
+            _make_finding(
+                scanner="context-file-scanner",
+                file_path=item.get("file_path", "unknown"),
+                line=item.get("line_number", 0),
+                severity=item.get("severity", "medium"),
+                description=item.get(
+                    "description", "Context file injection pattern detected"
+                ),
+                remediation=remediation_map.get(
+                    cat, "Review and remove the suspicious pattern"
+                ),
+                category=cat,
+            )
+        )
     return findings
 
 
@@ -311,14 +344,16 @@ def _check_gitignore(directory: str) -> list[dict[str, Any]]:
     findings = []
 
     if not os.path.isfile(gitignore_path):
-        findings.append(_make_finding(
-            scanner="repo-hygiene",
-            file_path=".gitignore",
-            line=0,
-            severity="medium",
-            description="Missing .gitignore file — secrets and build artifacts may be committed",
-            remediation="Create a .gitignore file with patterns for .env, node_modules, __pycache__, .DS_Store",
-        ))
+        findings.append(
+            _make_finding(
+                scanner="repo-hygiene",
+                file_path=".gitignore",
+                line=0,
+                severity="medium",
+                description="Missing .gitignore file — secrets and build artifacts may be committed",
+                remediation="Create a .gitignore file with patterns for .env, node_modules, __pycache__, .DS_Store",
+            )
+        )
         return findings
 
     try:
@@ -329,14 +364,16 @@ def _check_gitignore(directory: str) -> list[dict[str, Any]]:
 
     for pattern, message in _EXPECTED_GITIGNORE_PATTERNS:
         if pattern not in content:
-            findings.append(_make_finding(
-                scanner="repo-hygiene",
-                file_path=".gitignore",
-                line=0,
-                severity="medium",
-                description=f".gitignore missing '{pattern}' pattern — {message}",
-                remediation=f"Add '{pattern}' to .gitignore",
-            ))
+            findings.append(
+                _make_finding(
+                    scanner="repo-hygiene",
+                    file_path=".gitignore",
+                    line=0,
+                    severity="medium",
+                    description=f".gitignore missing '{pattern}' pattern — {message}",
+                    remediation=f"Add '{pattern}' to .gitignore",
+                )
+            )
 
     return findings
 
@@ -364,17 +401,23 @@ def _check_tracked_env_files(directory: str) -> list[dict[str, Any]]:
             continue
         basename = os.path.basename(line)
         # Match .env, .env.local, .env.production, etc. but NOT .env.example
-        if basename.startswith(".env") and ".example" not in basename and basename != ".env.example":
+        if (
+            basename.startswith(".env")
+            and ".example" not in basename
+            and basename != ".env.example"
+        ):
             # Exclude if it's just ".env.example" in a subdir
             if ".example" not in line:
-                findings.append(_make_finding(
-                    scanner="repo-hygiene",
-                    file_path=line,
-                    line=0,
-                    severity="critical",
-                    description=f"Tracked .env file '{line}' — secrets may be in git history",
-                    remediation=f"Remove '{line}' from git tracking: git rm --cached {line}",
-                ))
+                findings.append(
+                    _make_finding(
+                        scanner="repo-hygiene",
+                        file_path=line,
+                        line=0,
+                        severity="critical",
+                        description=f"Tracked .env file '{line}' — secrets may be in git history",
+                        remediation=f"Remove '{line}' from git tracking: git rm --cached {line}",
+                    )
+                )
 
     return findings
 
@@ -390,6 +433,7 @@ def _run_repo_hygiene(directory: str) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # Orchestrator
 # ---------------------------------------------------------------------------
+
 
 def run_scan(directory: str) -> ScanResult:
     """Run all available security scanners against a directory.
@@ -421,10 +465,12 @@ def run_scan(directory: str) -> ScanResult:
         except RuntimeError as e:
             result.errors.append(str(e))
     elif gitleaks:
-        result.scanners_skipped.append({
-            "name": "gitleaks",
-            "install_hint": gitleaks.install_hint or "",
-        })
+        result.scanners_skipped.append(
+            {
+                "name": "gitleaks",
+                "install_hint": gitleaks.install_hint or "",
+            }
+        )
 
     # Dependency scanner: prefer osv-scanner, fallback to trivy
     osv = scanner_map.get("osv-scanner")
@@ -444,15 +490,19 @@ def run_scan(directory: str) -> ScanResult:
     else:
         # Both missing — skip both
         if osv:
-            result.scanners_skipped.append({
-                "name": "osv-scanner",
-                "install_hint": osv.install_hint or "",
-            })
+            result.scanners_skipped.append(
+                {
+                    "name": "osv-scanner",
+                    "install_hint": osv.install_hint or "",
+                }
+            )
         if trivy:
-            result.scanners_skipped.append({
-                "name": "trivy",
-                "install_hint": trivy.install_hint or "",
-            })
+            result.scanners_skipped.append(
+                {
+                    "name": "trivy",
+                    "install_hint": trivy.install_hint or "",
+                }
+            )
 
     # Semgrep (static analysis)
     semgrep = scanner_map.get("semgrep")
@@ -463,10 +513,12 @@ def run_scan(directory: str) -> ScanResult:
         except RuntimeError as e:
             result.errors.append(str(e))
     elif semgrep:
-        result.scanners_skipped.append({
-            "name": "semgrep",
-            "install_hint": semgrep.install_hint or "",
-        })
+        result.scanners_skipped.append(
+            {
+                "name": "semgrep",
+                "install_hint": semgrep.install_hint or "",
+            }
+        )
 
     # --- Built-in scanners (always run) ---
 
@@ -485,7 +537,10 @@ def run_scan(directory: str) -> ScanResult:
 # Severity bucketing
 # ---------------------------------------------------------------------------
 
-def bucket_by_severity(findings: list[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+
+def bucket_by_severity(
+    findings: list[dict[str, Any]],
+) -> dict[str, list[dict[str, Any]]]:
     """Group findings by severity level.
 
     Returns a dict with keys: critical, high, medium, low.
@@ -511,6 +566,7 @@ def bucket_by_severity(findings: list[dict[str, Any]]) -> dict[str, list[dict[st
 # Summary line
 # ---------------------------------------------------------------------------
 
+
 def format_summary_line(findings: list[dict[str, Any]], scanners_run: list[str]) -> str:
     """Format a summary line with severity counts and scanner count.
 
@@ -526,6 +582,7 @@ def format_summary_line(findings: list[dict[str, Any]], scanners_run: list[str])
 # ---------------------------------------------------------------------------
 # JSON report
 # ---------------------------------------------------------------------------
+
 
 def format_json_report(result: ScanResult) -> str:
     """Format scan results as a JSON report string.
@@ -559,6 +616,7 @@ def format_json_report(result: ScanResult) -> str:
 # ---------------------------------------------------------------------------
 # Markdown report
 # ---------------------------------------------------------------------------
+
 
 def format_markdown_report(result: ScanResult) -> str:
     """Format scan results as a markdown report string."""
@@ -624,6 +682,7 @@ def format_markdown_report(result: ScanResult) -> str:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point. Returns exit code.

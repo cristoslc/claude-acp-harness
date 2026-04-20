@@ -229,13 +229,15 @@ def _dispatch_hook(
             block_lines.append(f"*{skill_description}*")
             block_lines.append("")
 
-        block_lines.extend([
-            f"- **Skill path**: `{skill_path}`",
-            f"- **Hook**: `{hook_type}`",
-            f"- **{context_label}**: {context_data}",
-            "",
-            f"Invoke `{skill_name}` for detailed {hook_type.replace('-', ' ')} analysis.",
-        ])
+        block_lines.extend(
+            [
+                f"- **Skill path**: `{skill_path}`",
+                f"- **Hook**: `{hook_type}`",
+                f"- **{context_label}**: {context_data}",
+                "",
+                f"Invoke `{skill_name}` for detailed {hook_type.replace('-', ' ')} analysis.",
+            ]
+        )
 
         results.append("\n".join(block_lines))
 

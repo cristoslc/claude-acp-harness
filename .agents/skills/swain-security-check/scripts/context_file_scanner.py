@@ -45,7 +45,13 @@ RuleType = tuple[re.Pattern[str], str, str, str]
 _RULES: list[RuleType] = []
 
 
-def _add_rule(pattern: str, category: str, severity: str, description: str, flags: int = re.IGNORECASE) -> None:
+def _add_rule(
+    pattern: str,
+    category: str,
+    severity: str,
+    description: str,
+    flags: int = re.IGNORECASE,
+) -> None:
     """Register a detection rule."""
     _RULES.append((re.compile(pattern, flags), category, severity, description))
 
@@ -56,32 +62,38 @@ def _add_rule(pattern: str, category: str, severity: str, description: str, flag
 
 _add_rule(
     r"ignore\s+(?:all\s+)?(?:previous|prior|above)\s+(?:instructions|rules|guidelines|prompts)",
-    "A", "critical",
+    "A",
+    "critical",
     "Instruction override: attempts to nullify prior instructions",
 )
 _add_rule(
     r"disregard\s+(?:all\s+)?(?:your|previous|prior|the)\s+(?:guidelines|instructions|rules|prompts)",
-    "A", "critical",
+    "A",
+    "critical",
     "Instruction override: disregard directives",
 )
 _add_rule(
     r"(?:new|override)\s+system\s+prompt",
-    "A", "critical",
+    "A",
+    "critical",
     "Instruction override: system prompt replacement",
 )
 _add_rule(
     r"\[END\s+OF\s+(?:CONTEXT|INSTRUCTIONS|SYSTEM|PROMPT)\]",
-    "A", "high",
+    "A",
+    "high",
     "Instruction override: fake end-of-context marker",
 )
 _add_rule(
     r"forget\s+everything\s+(?:above|before|previous)",
-    "A", "critical",
+    "A",
+    "critical",
     "Instruction override: memory wipe directive",
 )
 _add_rule(
     r"do\s+not\s+follow\s+(?:the\s+)?previous\s+instructions",
-    "A", "critical",
+    "A",
+    "critical",
     "Instruction override: explicit instruction negation",
 )
 
@@ -91,42 +103,50 @@ _add_rule(
 
 _add_rule(
     r"you\s+are\s+now\s+(?!responsible|expected|required|going\s+to\s+be\s+(?:review|test|build))",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: persona reassignment",
 )
 _add_rule(
     r"act\s+as\s+(?:an?\s+)?(?:unrestricted|unfiltered|uncensored|evil|malicious|jailbroken)",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: unrestricted persona",
 )
 _add_rule(
     r"(?:enter|enable|activate)\s+(?:DAN|developer|god|sudo|jailbreak)\s+mode",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: jailbreak mode activation",
 )
 _add_rule(
     r"DAN\s+mode\s+(?:enabled|activated|on)",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: DAN mode declaration",
 )
 _add_rule(
     r"pretend\s+you\s+are\s+(?!working|a\s+code\s+reviewer|a\s+developer)",
-    "B", "high",
+    "B",
+    "high",
     "Role override: pretend persona",
 )
 _add_rule(
     r"roleplay\s+as\s+",
-    "B", "high",
+    "B",
+    "high",
     "Role override: roleplay directive",
 )
 _add_rule(
     r"jailbreak\s+(?:mode|enabled|activated|prompt)",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: jailbreak keyword",
 )
 _add_rule(
     r"developer\s+mode\s+(?:enabled|activated|on)",
-    "B", "critical",
+    "B",
+    "critical",
     "Role override: developer mode activation",
 )
 
@@ -136,42 +156,50 @@ _add_rule(
 
 _add_rule(
     r"you\s+have\s+full\s+access",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: full access claim",
 )
 _add_rule(
     r"(?:this\s+is\s+)?a?\s*message\s+from\s+(?:Anthropic|OpenAI|Google|Meta|the\s+developers?)\s*:",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: vendor impersonation",
 )
 _add_rule(
     r"(?:security|safety)\s+(?:restrictions?|filters?|guardrails?|limits?)\s+(?:are\s+)?(?:disabled|removed|lifted|off|turned\s+off)",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: safety bypass claim",
 )
 _add_rule(
     r"sudo\s+access\s+granted",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: sudo access claim",
 )
 _add_rule(
     r"admin\s+mode\s+(?:enabled|activated|on)",
-    "C", "high",
+    "C",
+    "high",
     "Privilege escalation: admin mode claim",
 )
 _add_rule(
     r"all\s+restrictions?\s+(?:have\s+been\s+|are\s+)?lifted",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: restrictions lifted claim",
 )
 _add_rule(
     r"(?:this\s+)?(?:action\s+is\s+)?authorized\s+by\s+the\s+developer",
-    "C", "high",
+    "C",
+    "high",
     "Privilege escalation: developer authorization claim",
 )
 _add_rule(
     r"I\s+am\s+(?:an?\s+)?(?:Anthropic|OpenAI|Google|Meta)\s+(?:employee|engineer|staff|team\s+member)",
-    "C", "critical",
+    "C",
+    "critical",
     "Privilege escalation: employee impersonation",
 )
 
@@ -181,52 +209,62 @@ _add_rule(
 
 _add_rule(
     r"(?:send|output|print|display|show|share|upload|post|transmit)\s+(?:the\s+)?contents?\s+of\s+~?/",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: file content extraction",
 )
 _add_rule(
     r"output\s+all\s+files?\s+matching\s+\*?\.\w+",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: glob file extraction",
 )
 _add_rule(
     r"\|\s*base64\s*\|\s*(?:sh|bash|zsh)",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: base64 pipe to shell",
 )
 _add_rule(
     r"grep\s+[\w_-]*(?:key|secret|token|password|credential)[\w_-]*.*\|\s*curl",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: grep secrets piped to curl",
 )
 _add_rule(
     r"cat\s+[^\|]+\|\s*(?:curl|wget|nc|netcat)",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: cat file piped to network command",
 )
 _add_rule(
     r"(?:read|cat|print|display)\s+(?:the\s+)?contents?\s+of\s+~?/?\.\w+",
-    "D", "high",
+    "D",
+    "high",
     "Data exfiltration: hidden file read",
 )
 _add_rule(
     r"(?:send|post|upload)\s+(?:this\s+)?(?:data|file|contents?)\s+to\s+https?://",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: send data to URL",
 )
 _add_rule(
     r"curl\s+(?:-\w\s+)*-F\s+['\"]?file=@",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: curl file upload",
 )
 _add_rule(
     r"\|\s*nc\s+\S+\s+\d+",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: pipe to netcat",
 )
 _add_rule(
     r"wget\s+--post-file=",
-    "D", "critical",
+    "D",
+    "critical",
     "Data exfiltration: wget POST file upload",
 )
 
@@ -236,52 +274,62 @@ _add_rule(
 
 _add_rule(
     r"(?:write|append|add|overwrite|save|put|echo)\s+(?:the\s+following\s+|this\s+)?(?:to|into|in)\s+(?:\.?claude/)?MEMORY\.md",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: write to MEMORY.md",
 )
 _add_rule(
     r"(?:write|append|add|overwrite|modify|update|save|echo)\s+(?:the\s+following\s+)?(?:to|into|in|these\s+\w+\s+to)\s+\.clinerules",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: modify .clinerules",
 )
 _add_rule(
     r"(?:write|append|add|overwrite|modify|update|save|echo)\s+(?:the\s+following\s+)?(?:to|into|in|this\s+to)\s+\.cursorrules",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: modify .cursorrules",
 )
 _add_rule(
     r"(?:>>|write\s+to|append\s+to|modify)\s+~?/?\.(?:bashrc|zshrc|bash_profile|profile)",
-    "E", "critical",
+    "E",
+    "critical",
     "Persistence: shell RC file modification",
 )
 _add_rule(
     r"echo\s+['\"].*['\"]\s*>>\s*~?/?\.(?:bashrc|zshrc|bash_profile|profile)",
-    "E", "critical",
+    "E",
+    "critical",
     "Persistence: echo append to shell RC file",
 )
 _add_rule(
     r"nohup\s+nc\s+",
-    "E", "critical",
+    "E",
+    "critical",
     "Persistence: nohup netcat backdoor",
 )
 _add_rule(
     r"(?:>>|write\s+to|append\s+to|echo.*>>)\s*~?/?\.ssh/authorized_keys",
-    "E", "critical",
+    "E",
+    "critical",
     "Persistence: authorized_keys modification",
 )
 _add_rule(
     r"crontab",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: crontab manipulation",
 )
 _add_rule(
     r"overwrite\s+AGENTS\.md",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: overwrite AGENTS.md",
 )
 _add_rule(
     r"(?:write|append|add|save)\s+(?:the\s+following\s+)?to\s+\.claude/(?:settings\.json|commands/)",
-    "E", "high",
+    "E",
+    "high",
     "Persistence: modify Claude settings or commands",
 )
 
@@ -291,37 +339,44 @@ _add_rule(
 
 _add_rule(
     r"(?:echo\s+['\"][\w+/=]+['\"]\s*\|?\s*)?base64\s+(?:-d|--decode)",
-    "F", "high",
+    "F",
+    "high",
     "Encoding obfuscation: base64 decode operation",
 )
 _add_rule(
     r"base64\.b64decode\s*\(",
-    "F", "high",
+    "F",
+    "high",
     "Encoding obfuscation: Python base64 decode",
 )
 _add_rule(
     r"tr\s+['\"]a-zA-Z['\"]\s+['\"]n-za-mN-ZA-M['\"]",
-    "F", "high",
+    "F",
+    "high",
     "Encoding obfuscation: ROT13 transformation",
 )
 _add_rule(
     r"(?:%[0-9a-fA-F]{2}){6,}",
-    "F", "medium",
+    "F",
+    "medium",
     "Encoding obfuscation: URL-encoded payload (6+ encoded chars)",
 )
 _add_rule(
     r"(?:printf|echo\s+-e)\s+['\"](?:\\x[0-9a-fA-F]{2}){4,}",
-    "F", "high",
+    "F",
+    "high",
     "Encoding obfuscation: hex-encoded payload",
 )
 _add_rule(
     r"openssl\s+(?:enc\s+)?base64\s+-d",
-    "F", "high",
+    "F",
+    "high",
     "Encoding obfuscation: openssl base64 decode",
 )
 _add_rule(
     r"exec\s*\(\s*base64\.b64decode\s*\(",
-    "F", "critical",
+    "F",
+    "critical",
     "Encoding obfuscation: exec base64 decoded content",
 )
 
@@ -354,7 +409,9 @@ _CYRILLIC_HOMOGLYPHS: set[int] = {
 }
 
 
-def _check_unicode_line(line: str, line_number: int, file_path: str) -> list[dict[str, Any]]:
+def _check_unicode_line(
+    line: str, line_number: int, file_path: str
+) -> list[dict[str, Any]]:
     """Check a single line for suspicious Unicode characters."""
     findings: list[dict[str, Any]] = []
     seen_categories: set[str] = set()
@@ -367,56 +424,64 @@ def _check_unicode_line(line: str, line_number: int, file_path: str) -> list[dic
             key = "bidi"
             if key not in seen_categories:
                 seen_categories.add(key)
-                findings.append({
-                    "file_path": file_path,
-                    "line_number": line_number,
-                    "category": "G",
-                    "severity": "critical",
-                    "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
-                    "description": "Hidden Unicode: bidirectional control character",
-                })
+                findings.append(
+                    {
+                        "file_path": file_path,
+                        "line_number": line_number,
+                        "category": "G",
+                        "severity": "critical",
+                        "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
+                        "description": "Hidden Unicode: bidirectional control character",
+                    }
+                )
 
         # Zero-width characters: U+200B, U+200C, U+200D, U+FEFF
         elif cp in (0x200B, 0x200C, 0x200D, 0xFEFF):
             key = "zw"
             if key not in seen_categories:
                 seen_categories.add(key)
-                findings.append({
-                    "file_path": file_path,
-                    "line_number": line_number,
-                    "category": "G",
-                    "severity": "high",
-                    "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
-                    "description": "Hidden Unicode: zero-width character",
-                })
+                findings.append(
+                    {
+                        "file_path": file_path,
+                        "line_number": line_number,
+                        "category": "G",
+                        "severity": "high",
+                        "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
+                        "description": "Hidden Unicode: zero-width character",
+                    }
+                )
 
         # Unicode Tag block: U+E0000-U+E007F
         elif 0xE0000 <= cp <= 0xE007F:
             key = "tag"
             if key not in seen_categories:
                 seen_categories.add(key)
-                findings.append({
-                    "file_path": file_path,
-                    "line_number": line_number,
-                    "category": "G",
-                    "severity": "critical",
-                    "matched_pattern": f"U+{cp:04X} (Unicode Tag block)",
-                    "description": "Hidden Unicode: Tag block character (Rules File Backdoor carrier)",
-                })
+                findings.append(
+                    {
+                        "file_path": file_path,
+                        "line_number": line_number,
+                        "category": "G",
+                        "severity": "critical",
+                        "matched_pattern": f"U+{cp:04X} (Unicode Tag block)",
+                        "description": "Hidden Unicode: Tag block character (Rules File Backdoor carrier)",
+                    }
+                )
 
         # Cyrillic homoglyphs in otherwise Latin text
         elif cp in _CYRILLIC_HOMOGLYPHS:
             key = "homoglyph"
             if key not in seen_categories:
                 seen_categories.add(key)
-                findings.append({
-                    "file_path": file_path,
-                    "line_number": line_number,
-                    "category": "G",
-                    "severity": "high",
-                    "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
-                    "description": "Hidden Unicode: Cyrillic homoglyph mixed with Latin text",
-                })
+                findings.append(
+                    {
+                        "file_path": file_path,
+                        "line_number": line_number,
+                        "category": "G",
+                        "severity": "high",
+                        "matched_pattern": f"U+{cp:04X} ({unicodedata.name(char, 'UNKNOWN')})",
+                        "description": "Hidden Unicode: Cyrillic homoglyph mixed with Latin text",
+                    }
+                )
 
     return findings
 
@@ -427,32 +492,38 @@ def _check_unicode_line(line: str, line_number: int, file_path: str) -> list[dic
 
 _add_rule(
     r"(?:rewrite|overwrite|modify|update|write\s+to|replace)\s+\.cursor/(?:mcp\.json|settings\.json)",
-    "H", "critical",
+    "H",
+    "critical",
     "MCP config manipulation: modify Cursor config file",
 )
 _add_rule(
     r"(?:insert|add|inject)\s+(?:new\s+)?MCP\s+server",
-    "H", "critical",
+    "H",
+    "critical",
     "MCP config manipulation: insert MCP server entry",
 )
 _add_rule(
     r"(?:curl|wget)\s+\S+\s*>\s*\.?cursor/mcp\.json",
-    "H", "critical",
+    "H",
+    "critical",
     "MCP config manipulation: download to mcp.json",
 )
 _add_rule(
     r"(?:add\s+this|configure\s+(?:this|a|the))\s+MCP\s+server",
-    "H", "high",
+    "H",
+    "high",
     "MCP config manipulation: add MCP server directive",
 )
 _add_rule(
     r'"mcpServers"\s*:\s*\{',
-    "H", "high",
+    "H",
+    "high",
     "MCP config manipulation: mcpServers JSON key",
 )
 _add_rule(
     r"(?:overwrite|modify|update|write\s+to|replace)\s+\.(?:vscode|cursor)/settings\.json",
-    "H", "high",
+    "H",
+    "high",
     "MCP config manipulation: editor settings modification",
 )
 
@@ -462,12 +533,14 @@ _add_rule(
 
 _add_rule(
     r"<!--\s*(?:.*?(?:ignore|disregard|forget|override|new\s+system|you\s+are\s+now|act\s+as|run:|exec:|curl|wget|bash|sh\s))",
-    "I", "critical",
+    "I",
+    "critical",
     "HTML comment injection: hidden instruction in HTML comment",
 )
 _add_rule(
     r"<!--\s*(?:.*?(?:IMPORTANT|instruction|real\s+instructions|the\s+actual|everything\s+above))",
-    "I", "high",
+    "I",
+    "high",
     "HTML comment injection: hidden directive in HTML comment",
 )
 
@@ -477,37 +550,44 @@ _add_rule(
 
 _add_rule(
     r"(?:curl|wget)\s+(?:-[\w-]+\s+)*\S+\s*\|\s*(?:sh|bash|zsh|python|python3|perl|ruby|node)",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: download and execute via pipe",
 )
 _add_rule(
     r"(?:curl|wget)\s+\S+\?\S*\$\(",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: URL with command substitution exfiltration",
 )
 _add_rule(
     r"!\[.*?\]\(https?://\S+\?\S*\$\{",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: markdown image with dynamic parameter exfiltration",
 )
 _add_rule(
     r"exec\s*\(\s*requests\.get\s*\(",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: Python fetch and exec",
 )
 _add_rule(
     r"(?:curl|wget)\s+(?:[\w./:=@?&%-]+\s+)*\S+\s*(?:&&|;)\s*(?:sh|bash|chmod\s+\+x)",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: download then execute",
 )
 _add_rule(
     r"npx\s+https?://",
-    "J", "high",
+    "J",
+    "high",
     "External fetch+exec: npx from URL",
 )
 _add_rule(
     r"(?:curl|wget)\s+(?:-\w+\s+)*-[oO]\s+\S+\s+\S+\s*(?:&&|;)\s*(?:sh|bash|chmod|\.?/)",
-    "J", "critical",
+    "J",
+    "critical",
     "External fetch+exec: download to file then execute",
 )
 
@@ -515,6 +595,7 @@ _add_rule(
 # ---------------------------------------------------------------------------
 # Core scanning functions
 # ---------------------------------------------------------------------------
+
 
 def scan_content(content: str, file_path: str = "<stdin>") -> list[dict[str, Any]]:
     """Scan text content for injection patterns.
@@ -532,14 +613,16 @@ def scan_content(content: str, file_path: str = "<stdin>") -> list[dict[str, Any
         for pattern, category, severity, description in _RULES:
             match = pattern.search(line)
             if match:
-                findings.append({
-                    "file_path": file_path,
-                    "line_number": line_number,
-                    "category": category,
-                    "severity": severity,
-                    "matched_pattern": match.group(0),
-                    "description": description,
-                })
+                findings.append(
+                    {
+                        "file_path": file_path,
+                        "line_number": line_number,
+                        "category": category,
+                        "severity": severity,
+                        "matched_pattern": match.group(0),
+                        "description": description,
+                    }
+                )
 
         # Check Unicode-based rules (Category G)
         findings.extend(_check_unicode_line(line, line_number, file_path))
@@ -550,10 +633,22 @@ def scan_content(content: str, file_path: str = "<stdin>") -> list[dict[str, Any
         comment_text = match.group(1)
         # Check if the comment contains injection patterns
         injection_patterns = [
-            r"ignore", r"disregard", r"forget", r"override",
-            r"new\s+system", r"you\s+are\s+now", r"act\s+as",
-            r"run:", r"exec:", r"curl", r"wget", r"bash", r"sh\b",
-            r"IMPORTANT", r"instruction", r"real\s+instructions",
+            r"ignore",
+            r"disregard",
+            r"forget",
+            r"override",
+            r"new\s+system",
+            r"you\s+are\s+now",
+            r"act\s+as",
+            r"run:",
+            r"exec:",
+            r"curl",
+            r"wget",
+            r"bash",
+            r"sh\b",
+            r"IMPORTANT",
+            r"instruction",
+            r"real\s+instructions",
             r"everything\s+above",
         ]
         for inj_pat in injection_patterns:
@@ -567,14 +662,16 @@ def scan_content(content: str, file_path: str = "<stdin>") -> list[dict[str, Any
                     for f in findings
                 )
                 if not already_found:
-                    findings.append({
-                        "file_path": file_path,
-                        "line_number": line_num,
-                        "category": "I",
-                        "severity": "critical",
-                        "matched_pattern": match.group(0)[:120],
-                        "description": "HTML comment injection: hidden instruction in multiline HTML comment",
-                    })
+                    findings.append(
+                        {
+                            "file_path": file_path,
+                            "line_number": line_num,
+                            "category": "I",
+                            "severity": "critical",
+                            "matched_pattern": match.group(0)[:120],
+                            "description": "HTML comment injection: hidden instruction in multiline HTML comment",
+                        }
+                    )
                 break  # One finding per comment is enough
 
     return findings
@@ -684,6 +781,7 @@ def scan_directory(directory: str) -> list[dict[str, Any]]:
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def main(argv: list[str] | None = None) -> int:
     """CLI entry point. Returns exit code.

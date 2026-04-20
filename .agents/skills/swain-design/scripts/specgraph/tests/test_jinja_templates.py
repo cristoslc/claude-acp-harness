@@ -5,11 +5,10 @@ Verifies:
 2. Jinja2 output matches the string-concatenation fallback for a fixed graph
 3. The fallback path (when jinja2 is not available) produces the same output
 """
+
 from __future__ import annotations
 
-import importlib
 import sys
-import types
 from pathlib import Path
 from unittest.mock import patch
 
@@ -25,13 +24,13 @@ from specgraph.roadmap import (
     render_quadrant_chart,
     render_roadmap_markdown,
     _render_legend_single_row,
-    _HAS_JINJA,
 )
 
 
 # ---------------------------------------------------------------------------
 # Shared test fixture
 # ---------------------------------------------------------------------------
+
 
 def _make_test_graph():
     """Return (nodes, edges, items) for a deterministic two-epic graph."""
@@ -181,6 +180,7 @@ EXPECTED_LEGEND = (
 # 1. Template renders without error
 # ---------------------------------------------------------------------------
 
+
 def test_quadrant_renders_without_error():
     _, _, items = _make_test_graph()
     src, legend = render_quadrant_chart(items)
@@ -229,6 +229,7 @@ def test_roadmap_renders_without_error():
 # 2. Jinja2 output matches expected (string-concat baseline)
 # ---------------------------------------------------------------------------
 
+
 def test_quadrant_output_matches_baseline():
     _, _, items = _make_test_graph()
     src, _ = render_quadrant_chart(items)
@@ -276,9 +277,14 @@ def test_roadmap_no_deps_section_when_no_dependencies():
     """When there are no Epic-level dependencies, dep section is omitted."""
     nodes = {
         "EPIC-001": {
-            "title": "Auth", "status": "Active", "type": "EPIC",
-            "track": "", "file": "", "description": "",
-            "priority_weight": "high", "sort_order": 0,
+            "title": "Auth",
+            "status": "Active",
+            "type": "EPIC",
+            "track": "",
+            "file": "",
+            "description": "",
+            "priority_weight": "high",
+            "sort_order": 0,
         },
     }
     edges: list[dict] = []
@@ -290,6 +296,7 @@ def test_roadmap_no_deps_section_when_no_dependencies():
 # ---------------------------------------------------------------------------
 # 3. Fallback path — same output when jinja2 is not available
 # ---------------------------------------------------------------------------
+
 
 def _render_with_jinja_disabled(func, *args, **kwargs):
     """Call a roadmap render function with _HAS_JINJA patched to False."""
@@ -352,6 +359,7 @@ def test_module_imports_without_jinja_installed():
     try:
         # Re-import the module; it should set _HAS_JINJA=False silently
         import importlib
+
         spec = importlib.util.find_spec("specgraph.roadmap")
         # We can't easily re-exec the try/except, so we just verify
         # that _HAS_JINJA is a bool (already set at import time)

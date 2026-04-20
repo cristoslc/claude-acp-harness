@@ -78,21 +78,15 @@ class TestIsResolved:
         assert is_resolved("SPEC", "Ready") is False
 
     # Universal terminals work for all types
-    @pytest.mark.parametrize(
-        "atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"]
-    )
+    @pytest.mark.parametrize("atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"])
     def test_abandoned_always_resolved(self, atype):
         assert is_resolved(atype, "Abandoned") is True
 
-    @pytest.mark.parametrize(
-        "atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"]
-    )
+    @pytest.mark.parametrize("atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"])
     def test_superseded_always_resolved(self, atype):
         assert is_resolved(atype, "Superseded") is True
 
-    @pytest.mark.parametrize(
-        "atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"]
-    )
+    @pytest.mark.parametrize("atype", ["SPEC", "EPIC", "SPIKE", "ADR", "VISION"])
     def test_retired_always_resolved(self, atype):
         assert is_resolved(atype, "Retired") is True
 

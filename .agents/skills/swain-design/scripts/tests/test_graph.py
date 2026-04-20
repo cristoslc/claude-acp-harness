@@ -1,7 +1,6 @@
 """Tests for specgraph graph builder and cache I/O."""
 
 import multiprocessing
-import json
 import os
 import sys
 from pathlib import Path
@@ -19,7 +18,6 @@ from specgraph.graph import (
     read_cache,
     repo_hash,
     write_cache,
-    _select_direct_parent,
 )
 
 
@@ -274,77 +272,110 @@ class TestBuildGraph:
         (docs / "epic" / "Active" / "(EPIC-001)-Work").mkdir(parents=True)
         (docs / "spec" / "Proposed" / "(SPEC-001)-Child").mkdir(parents=True)
 
-        (docs / "vision" / "Active" / "(VISION-001)-Root" / "(VISION-001)-Root.md").write_text(
+        (
+            docs / "vision" / "Active" / "(VISION-001)-Root" / "(VISION-001)-Root.md"
+        ).write_text(
             '---\ntitle: "Root"\nartifact: VISION-001\nstatus: Active\ntrack: standing\n---\n# Vision\n',
             encoding="utf-8",
         )
-        (docs / "initiative" / "Active" / "(INITIATIVE-001)-Parent" / "(INITIATIVE-001)-Parent.md").write_text(
+        (
+            docs
+            / "initiative"
+            / "Active"
+            / "(INITIATIVE-001)-Parent"
+            / "(INITIATIVE-001)-Parent.md"
+        ).write_text(
             '---\ntitle: "Parent"\nartifact: INITIATIVE-001\nstatus: Active\ntrack: container\nparent-vision: VISION-001\n---\n# Initiative\n',
             encoding="utf-8",
         )
-        (docs / "epic" / "Active" / "(EPIC-001)-Work" / "(EPIC-001)-Work.md").write_text(
+        (
+            docs / "epic" / "Active" / "(EPIC-001)-Work" / "(EPIC-001)-Work.md"
+        ).write_text(
             '---\ntitle: "Work"\nartifact: EPIC-001\nstatus: Active\ntrack: container\nparent-vision: VISION-001\nparent-initiative: INITIATIVE-001\n---\n# Epic\n',
             encoding="utf-8",
         )
-        (docs / "spec" / "Proposed" / "(SPEC-001)-Child" / "(SPEC-001)-Child.md").write_text(
+        (
+            docs / "spec" / "Proposed" / "(SPEC-001)-Child" / "(SPEC-001)-Child.md"
+        ).write_text(
             '---\ntitle: "Child"\nartifact: SPEC-001\nstatus: Proposed\ntrack: implementable\nparent-initiative: INITIATIVE-001\nparent-epic: EPIC-001\n---\n# Spec\n',
             encoding="utf-8",
         )
 
         data = build_graph(tmp_path)
-        projection = {item["artifact"]: item for item in build_projection(data["nodes"], data["edges"])}
+        projection = {
+            item["artifact"]: item
+            for item in build_projection(data["nodes"], data["edges"])
+        }
 
         assert projection["VISION-001"]["placement_state"] == "root"
         assert projection["VISION-001"]["direct_parent"] is None
         assert projection["INITIATIVE-001"]["direct_parent"] == "VISION-001"
         assert projection["EPIC-001"]["direct_parent"] == "INITIATIVE-001"
         assert projection["SPEC-001"]["direct_parent"] == "EPIC-001"
-        assert projection["EPIC-001"]["canonical_path"] == "docs/epic/Active/(EPIC-001)-Work"
-        assert projection["SPEC-001"]["canonical_path"] == "docs/spec/Proposed/(SPEC-001)-Child"
+        assert (
+            projection["EPIC-001"]["canonical_path"]
+            == "docs/epic/Active/(EPIC-001)-Work"
+        )
+        assert (
+            projection["SPEC-001"]["canonical_path"]
+            == "docs/spec/Proposed/(SPEC-001)-Child"
+        )
 
     def test_projection_marks_unparented_when_no_direct_parent(self, tmp_path):
         docs = tmp_path / "docs"
         (docs / "spec" / "Proposed" / "(SPEC-001)-Lonely").mkdir(parents=True)
-        (docs / "spec" / "Proposed" / "(SPEC-001)-Lonely" / "(SPEC-001)-Lonely.md").write_text(
+        (
+            docs / "spec" / "Proposed" / "(SPEC-001)-Lonely" / "(SPEC-001)-Lonely.md"
+        ).write_text(
             '---\ntitle: "Lonely"\nartifact: SPEC-001\nstatus: Proposed\ntrack: implementable\n---\n# Spec\n',
             encoding="utf-8",
         )
 
         data = build_graph(tmp_path)
         projection = build_projection(data["nodes"], data["edges"])
-        assert projection == [{
-            "artifact": "SPEC-001",
-            "type": "SPEC",
-            "status": "Proposed",
-            "canonical_file": "docs/spec/Proposed/(SPEC-001)-Lonely/(SPEC-001)-Lonely.md",
-            "canonical_path": "docs/spec/Proposed/(SPEC-001)-Lonely",
-            "direct_parent": None,
-            "placement_state": "unparented",
-            "linked_artifacts": [],
-            "depends_on_artifacts": [],
-        }]
+        assert projection == [
+            {
+                "artifact": "SPEC-001",
+                "type": "SPEC",
+                "status": "Proposed",
+                "canonical_file": "docs/spec/Proposed/(SPEC-001)-Lonely/(SPEC-001)-Lonely.md",
+                "canonical_path": "docs/spec/Proposed/(SPEC-001)-Lonely",
+                "direct_parent": None,
+                "placement_state": "unparented",
+                "linked_artifacts": [],
+                "depends_on_artifacts": [],
+            }
+        ]
 
     def test_projection_marks_unparented_when_direct_parent_is_missing(self, tmp_path):
         docs = tmp_path / "docs"
         (docs / "spec" / "Proposed" / "(SPEC-001)-Dangling").mkdir(parents=True)
-        (docs / "spec" / "Proposed" / "(SPEC-001)-Dangling" / "(SPEC-001)-Dangling.md").write_text(
+        (
+            docs
+            / "spec"
+            / "Proposed"
+            / "(SPEC-001)-Dangling"
+            / "(SPEC-001)-Dangling.md"
+        ).write_text(
             '---\ntitle: "Dangling"\nartifact: SPEC-001\nstatus: Proposed\ntrack: implementable\nparent-epic: EPIC-999\n---\n# Spec\n',
             encoding="utf-8",
         )
 
         data = build_graph(tmp_path)
         projection = build_projection(data["nodes"], data["edges"])
-        assert projection == [{
-            "artifact": "SPEC-001",
-            "type": "SPEC",
-            "status": "Proposed",
-            "canonical_file": "docs/spec/Proposed/(SPEC-001)-Dangling/(SPEC-001)-Dangling.md",
-            "canonical_path": "docs/spec/Proposed/(SPEC-001)-Dangling",
-            "direct_parent": None,
-            "placement_state": "unparented",
-            "linked_artifacts": [],
-            "depends_on_artifacts": [],
-        }]
+        assert projection == [
+            {
+                "artifact": "SPEC-001",
+                "type": "SPEC",
+                "status": "Proposed",
+                "canonical_file": "docs/spec/Proposed/(SPEC-001)-Dangling/(SPEC-001)-Dangling.md",
+                "canonical_path": "docs/spec/Proposed/(SPEC-001)-Dangling",
+                "direct_parent": None,
+                "placement_state": "unparented",
+                "linked_artifacts": [],
+                "depends_on_artifacts": [],
+            }
+        ]
 
     def test_projection_converts_flat_artifact_file_to_folder_target(self, tmp_path):
         docs = tmp_path / "docs"
@@ -357,107 +388,153 @@ class TestBuildGraph:
         data = build_graph(tmp_path)
         projection = build_projection(data["nodes"], data["edges"])
 
-        assert projection == [{
-            "artifact": "ADR-001",
-            "type": "ADR",
-            "status": "Active",
-            "canonical_file": "docs/adr/Active/(ADR-001)-Decision.md",
-            "canonical_path": "docs/adr/Active/(ADR-001)-Decision",
-            "direct_parent": None,
-            "placement_state": "unparented",
-            "linked_artifacts": [],
-            "depends_on_artifacts": [],
-        }]
+        assert projection == [
+            {
+                "artifact": "ADR-001",
+                "type": "ADR",
+                "status": "Active",
+                "canonical_file": "docs/adr/Active/(ADR-001)-Decision.md",
+                "canonical_path": "docs/adr/Active/(ADR-001)-Decision",
+                "direct_parent": None,
+                "placement_state": "unparented",
+                "linked_artifacts": [],
+                "depends_on_artifacts": [],
+            }
+        ]
 
     def test_build_projection_includes_linked_artifacts(self):
         """Projection records include linked_artifacts from linked-artifacts edges."""
         nodes = {
-            "EPIC-001": {"type": "EPIC", "status": "Active", "file": "docs/epic/Active/EPIC-001.md"},
-            "DESIGN-001": {"type": "DESIGN", "status": "Active", "file": "docs/design/Active/DESIGN-001.md"},
+            "EPIC-001": {
+                "type": "EPIC",
+                "status": "Active",
+                "file": "docs/epic/Active/EPIC-001.md",
+            },
+            "DESIGN-001": {
+                "type": "DESIGN",
+                "status": "Active",
+                "file": "docs/design/Active/DESIGN-001.md",
+            },
         }
         edges = [
             {"from": "EPIC-001", "to": "DESIGN-001", "type": "linked-artifacts"},
         ]
-        
+
         projection = build_projection(nodes, edges)
         epic_record = next(r for r in projection if r["artifact"] == "EPIC-001")
-        
+
         assert epic_record["linked_artifacts"] == ["DESIGN-001"]
 
     def test_build_projection_merges_artifact_refs_into_linked(self):
         """artifact-refs edges are merged into linked_artifacts field."""
         nodes = {
-            "EPIC-002": {"type": "EPIC", "status": "Active", "file": "docs/epic/Active/EPIC-002.md"},
-            "DESIGN-002": {"type": "DESIGN", "status": "Active", "file": "docs/design/Active/DESIGN-002.md"},
+            "EPIC-002": {
+                "type": "EPIC",
+                "status": "Active",
+                "file": "docs/epic/Active/EPIC-002.md",
+            },
+            "DESIGN-002": {
+                "type": "DESIGN",
+                "status": "Active",
+                "file": "docs/design/Active/DESIGN-002.md",
+            },
         }
         edges = [
             {"from": "EPIC-002", "to": "DESIGN-002", "type": "artifact-refs"},
         ]
-        
+
         projection = build_projection(nodes, edges)
         epic_record = next(r for r in projection if r["artifact"] == "EPIC-002")
-        
+
         assert epic_record["linked_artifacts"] == ["DESIGN-002"]
 
     def test_build_projection_includes_depends_on_artifacts(self):
         """Projection records include depends_on_artifacts field."""
         nodes = {
-            "SPEC-001": {"type": "SPEC", "status": "Proposed", "file": "docs/spec/Proposed/SPEC-001.md"},
-            "SPEC-002": {"type": "SPEC", "status": "Complete", "file": "docs/spec/Complete/SPEC-002.md"},
+            "SPEC-001": {
+                "type": "SPEC",
+                "status": "Proposed",
+                "file": "docs/spec/Proposed/SPEC-001.md",
+            },
+            "SPEC-002": {
+                "type": "SPEC",
+                "status": "Complete",
+                "file": "docs/spec/Complete/SPEC-002.md",
+            },
         }
         edges = [
             {"from": "SPEC-001", "to": "SPEC-002", "type": "depends-on"},
         ]
-        
+
         projection = build_projection(nodes, edges)
         spec_record = next(r for r in projection if r["artifact"] == "SPEC-001")
-        
+
         assert spec_record["depends_on_artifacts"] == ["SPEC-002"]
 
     def test_build_projection_empty_relationships(self):
         """Artifacts with no relationships have empty lists."""
         nodes = {
-            "SPEC-003": {"type": "SPEC", "status": "Proposed", "file": "docs/spec/Proposed/SPEC-003.md"},
+            "SPEC-003": {
+                "type": "SPEC",
+                "status": "Proposed",
+                "file": "docs/spec/Proposed/SPEC-003.md",
+            },
         }
         edges = []
-        
+
         projection = build_projection(nodes, edges)
         spec_record = next(r for r in projection if r["artifact"] == "SPEC-003")
-        
+
         assert spec_record["linked_artifacts"] == []
         assert spec_record["depends_on_artifacts"] == []
 
     def test_build_projection_excludes_broken_references(self):
         """Edges to non-existent artifacts are excluded."""
         nodes = {
-            "SPEC-004": {"type": "SPEC", "status": "Proposed", "file": "docs/spec/Proposed/SPEC-004.md"},
+            "SPEC-004": {
+                "type": "SPEC",
+                "status": "Proposed",
+                "file": "docs/spec/Proposed/SPEC-004.md",
+            },
         }
         edges = [
             {"from": "SPEC-004", "to": "MISSING-001", "type": "linked-artifacts"},
             {"from": "SPEC-004", "to": "MISSING-002", "type": "depends-on"},
         ]
-        
+
         projection = build_projection(nodes, edges)
         spec_record = next(r for r in projection if r["artifact"] == "SPEC-004")
-        
+
         assert spec_record["linked_artifacts"] == []
         assert spec_record["depends_on_artifacts"] == []
 
     def test_build_projection_merges_both_linked_types(self):
         """linked-artifacts and artifact-refs both go into linked_artifacts."""
         nodes = {
-            "EPIC-003": {"type": "EPIC", "status": "Active", "file": "docs/epic/Active/EPIC-003.md"},
-            "DESIGN-003": {"type": "DESIGN", "status": "Active", "file": "docs/design/Active/DESIGN-003.md"},
-            "ADR-003": {"type": "ADR", "status": "Active", "file": "docs/adr/Active/ADR-003.md"},
+            "EPIC-003": {
+                "type": "EPIC",
+                "status": "Active",
+                "file": "docs/epic/Active/EPIC-003.md",
+            },
+            "DESIGN-003": {
+                "type": "DESIGN",
+                "status": "Active",
+                "file": "docs/design/Active/DESIGN-003.md",
+            },
+            "ADR-003": {
+                "type": "ADR",
+                "status": "Active",
+                "file": "docs/adr/Active/ADR-003.md",
+            },
         }
         edges = [
             {"from": "EPIC-003", "to": "DESIGN-003", "type": "linked-artifacts"},
             {"from": "EPIC-003", "to": "ADR-003", "type": "artifact-refs"},
         ]
-        
+
         projection = build_projection(nodes, edges)
         epic_record = next(r for r in projection if r["artifact"] == "EPIC-003")
-        
+
         # Both are merged and sorted
         assert epic_record["linked_artifacts"] == ["ADR-003", "DESIGN-003"]
 
@@ -467,17 +544,24 @@ def test_dual_parent_spec_produces_xref_warning():
     import tempfile
     from pathlib import Path
     from specgraph.graph import build_graph
+
     with tempfile.TemporaryDirectory() as tmpdir:
         docs = os.path.join(tmpdir, "docs", "spec", "Active")
         os.makedirs(docs)
         spec_dir = os.path.join(docs, "(SPEC-099)-Dual-Parent")
         os.makedirs(spec_dir)
         with open(os.path.join(spec_dir, "(SPEC-099)-Dual-Parent.md"), "w") as f:
-            f.write("---\ntitle: Dual Parent\nartifact: SPEC-099\nstatus: Active\nparent-epic: EPIC-001\nparent-initiative: INITIATIVE-001\n---\nBody.\n")
+            f.write(
+                "---\ntitle: Dual Parent\nartifact: SPEC-099\nstatus: Active\nparent-epic: EPIC-001\nparent-initiative: INITIATIVE-001\n---\nBody.\n"
+            )
         result = build_graph(Path(tmpdir))
         # Check for dual-parent warning in xref
-        warnings = [x for x in result.get("xref", []) if x.get("artifact") == "SPEC-099"]
-        assert any(w.get("dual_parent") for w in warnings), f"Expected dual_parent warning, got: {warnings}"
+        warnings = [
+            x for x in result.get("xref", []) if x.get("artifact") == "SPEC-099"
+        ]
+        assert any(
+            w.get("dual_parent") for w in warnings
+        ), f"Expected dual_parent warning, got: {warnings}"
 
 
 class TestCacheIO:
@@ -530,6 +614,7 @@ class TestNeedsRebuild:
         (docs / "spec.md").write_text("# old\n")
 
         import time
+
         time.sleep(0.05)
 
         cf = tmp_path / "cache.json"
@@ -545,6 +630,7 @@ class TestNeedsRebuild:
         cf.write_text("{}")
 
         import time
+
         time.sleep(0.05)
 
         (docs / "spec.md").write_text("# new\n")

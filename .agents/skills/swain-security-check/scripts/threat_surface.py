@@ -23,10 +23,17 @@ CAT_AGENT_CONTEXT = "agent-context"
 CAT_DEPENDENCY_CHANGE = "dependency-change"
 CAT_SECRETS = "secrets"
 
-VALID_CATEGORIES = frozenset({
-    CAT_AUTH, CAT_INPUT_VALIDATION, CAT_CRYPTO, CAT_EXTERNAL_DATA,
-    CAT_AGENT_CONTEXT, CAT_DEPENDENCY_CHANGE, CAT_SECRETS,
-})
+VALID_CATEGORIES = frozenset(
+    {
+        CAT_AUTH,
+        CAT_INPUT_VALIDATION,
+        CAT_CRYPTO,
+        CAT_EXTERNAL_DATA,
+        CAT_AGENT_CONTEXT,
+        CAT_DEPENDENCY_CHANGE,
+        CAT_SECRETS,
+    }
+)
 
 # ---------------------------------------------------------------------------
 # Keyword -> category mapping
@@ -45,7 +52,7 @@ _STEM_KEYWORDS: dict[str, str] = {
     "encrypt": CAT_CRYPTO,
     "certificate": CAT_CRYPTO,
     "sanitize": CAT_INPUT_VALIDATION,
-    "validat": CAT_INPUT_VALIDATION,     # matches validate, validation, validating
+    "validat": CAT_INPUT_VALIDATION,  # matches validate, validation, validating
     "secret": CAT_SECRETS,
 }
 
@@ -72,7 +79,7 @@ _EXACT_PATTERN = re.compile(
 # Tag -> category mapping
 # ---------------------------------------------------------------------------
 SECURITY_TAGS: dict[str, str | None] = {
-    "security": None,       # triggers is_security_sensitive but no specific category
+    "security": None,  # triggers is_security_sensitive but no specific category
     "auth": CAT_AUTH,
     "crypto": CAT_CRYPTO,
     "input-validation": CAT_INPUT_VALIDATION,
@@ -86,12 +93,10 @@ FILE_PATH_RULES: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"(^|/)auth/"), CAT_AUTH),
     (re.compile(r"(^|/)crypto/"), CAT_CRYPTO),
     (re.compile(r"(^|/)middleware/auth"), CAT_AUTH),
-
     # Secret / env files
     (re.compile(r"(^|/)\.env(\b|$)"), CAT_SECRETS),
     (re.compile(r"credential", re.IGNORECASE), CAT_SECRETS),
     (re.compile(r"secret", re.IGNORECASE), CAT_SECRETS),
-
     # Dependency manifest files
     (re.compile(r"(^|/)package\.json$"), CAT_DEPENDENCY_CHANGE),
     (re.compile(r"(^|/)package-lock\.json$"), CAT_DEPENDENCY_CHANGE),
@@ -107,6 +112,7 @@ FILE_PATH_RULES: list[tuple[re.Pattern[str], str]] = [
 @dataclass
 class ThreatSurfaceResult:
     """Result of threat surface detection."""
+
     is_security_sensitive: bool = False
     categories: list[str] = field(default_factory=list)
 

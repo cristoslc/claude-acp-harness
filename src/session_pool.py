@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import time
 from typing import Optional
 
 from config import HarnessConfig, SessionState

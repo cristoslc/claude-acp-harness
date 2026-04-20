@@ -206,7 +206,9 @@ def edges_cmd(
 _PARENT_EDGE_TYPES = frozenset({"parent-epic", "parent-vision", "parent-initiative"})
 
 # Lateral edge types shown in scope's Laterals section
-_LATERAL_EDGE_TYPES = frozenset({"linked-artifact", "addresses", "validates", "superseded-by"})
+_LATERAL_EDGE_TYPES = frozenset(
+    {"linked-artifact", "addresses", "validates", "superseded-by"}
+)
 
 
 def _get_immediate_parent(artifact_id: str, edges: list[dict]) -> str | None:
@@ -235,7 +237,9 @@ def _walk_parent_chain(artifact_id: str, edges: list[dict]) -> list[str]:
     return chain
 
 
-def _find_vision_ancestor(artifact_id: str, nodes: dict, edges: list[dict]) -> str | None:
+def _find_vision_ancestor(
+    artifact_id: str, nodes: dict, edges: list[dict]
+) -> str | None:
     """Return the VISION-type ancestor ID, if any exists in the parent chain."""
     chain = _walk_parent_chain(artifact_id, edges)
     for ancestor_id in chain:
@@ -289,7 +293,9 @@ def scope(
                 sibling_ids.append(sibling)
     sibling_ids.sort()
     sections.append("=== Siblings ===")
-    sections.extend(_format_id(sid, nodes, repo_root, show_links) for sid in sibling_ids)
+    sections.extend(
+        _format_id(sid, nodes, repo_root, show_links) for sid in sibling_ids
+    )
 
     # --- 3. Laterals ---
     lateral_ids: list[str] = []
@@ -303,7 +309,9 @@ def scope(
             lateral_ids.append(target)
     lateral_ids.sort()
     sections.append("=== Laterals ===")
-    sections.extend(_format_id(lid, nodes, repo_root, show_links) for lid in lateral_ids)
+    sections.extend(
+        _format_id(lid, nodes, repo_root, show_links) for lid in lateral_ids
+    )
 
     # --- 4. Architecture overview ---
     # Walk the full parent chain (epic-level first, then vision-level), checking each
@@ -409,10 +417,14 @@ def impact(
 # ---------------------------------------------------------------------------
 
 # Edge types always included in mermaid output
-_MERMAID_CORE_EDGE_TYPES = frozenset({"depends-on", "parent-epic", "parent-vision", "parent-initiative"})
+_MERMAID_CORE_EDGE_TYPES = frozenset(
+    {"depends-on", "parent-epic", "parent-vision", "parent-initiative"}
+)
 
 
-def mermaid_cmd(nodes: dict, edges: list[dict], show_all: bool = False, all_edges: bool = False) -> str:
+def mermaid_cmd(
+    nodes: dict, edges: list[dict], show_all: bool = False, all_edges: bool = False
+) -> str:
     """Emit a Mermaid graph TD diagram.
 
     - Only include nodes that are not resolved (unless show_all=True)
@@ -521,10 +533,14 @@ def status_cmd(nodes: dict, edges: list[dict], show_all: bool = False) -> str:
         id_width = max(len(r[0]) for r in rows)
         status_width = max((len(r[1]) for r in rows), default=0)
         for artifact_id, status, title in rows:
-            lines.append(f"  {artifact_id:<{id_width}}  {status:<{status_width}}  {title}")
+            lines.append(
+                f"  {artifact_id:<{id_width}}  {status:<{status_width}}  {title}"
+            )
 
     if hidden_count > 0 and not show_all:
-        lines.append(f"({hidden_count} resolved artifact{'s' if hidden_count != 1 else ''} hidden)")
+        lines.append(
+            f"({hidden_count} resolved artifact{'s' if hidden_count != 1 else ''} hidden)"
+        )
 
     return "\n".join(lines)
 
@@ -655,7 +671,8 @@ def next_cmd(
     lines.append("BLOCKED:")
 
     blocked_ids = [
-        artifact_id for artifact_id in nodes
+        artifact_id
+        for artifact_id in nodes
         if not _node_is_resolved(artifact_id, nodes) and artifact_id not in ready_set
     ]
 
@@ -690,7 +707,9 @@ def next_cmd(
 # ---------------------------------------------------------------------------
 
 
-def _status_icon(artifact_id: str, nodes: dict, edges: list[dict], ready_set: set[str]) -> str:
+def _status_icon(
+    artifact_id: str, nodes: dict, edges: list[dict], ready_set: set[str]
+) -> str:
     """Return a status icon for the artifact.
 
     Icons:
@@ -757,7 +776,9 @@ def _render_subtree_v2(
     if unresolved_deps:
         blocking_info = f"  [blocked by: {', '.join(unresolved_deps)}]"
 
-    lines.append(f"{prefix}{connector}{icon} {display_id}  {status}  {title}{blocking_info}")
+    lines.append(
+        f"{prefix}{connector}{icon} {display_id}  {status}  {title}{blocking_info}"
+    )
 
     # Get visible children
     child_ids = sorted(children.get(artifact_id, []))
@@ -769,7 +790,9 @@ def _render_subtree_v2(
 
     for i, child_id in enumerate(visible_children):
         is_last = i == len(visible_children) - 1
-        child_connector = "\u2514\u2500\u2500 " if is_last else "\u251c\u2500\u2500 "  # └── or ├──
+        child_connector = (
+            "\u2514\u2500\u2500 " if is_last else "\u251c\u2500\u2500 "
+        )  # └── or ├──
         # Determine continuation prefix for children of this child
         if connector in ("\u2514\u2500\u2500 ", ""):
             child_prefix = prefix + "    "
@@ -831,7 +854,9 @@ def overview(
         children.setdefault(parent_id, []).append(child_id)
 
     # --- Step 2: Find roots ---
-    roots = sorted(artifact_id for artifact_id in nodes if artifact_id not in has_parent)
+    roots = sorted(
+        artifact_id for artifact_id in nodes if artifact_id not in has_parent
+    )
 
     # --- Step 3: Compute ready set ---
     ready_set = _compute_ready_set(nodes, edges)
@@ -855,8 +880,8 @@ def overview(
             show_all,
             repo_root,
             show_links,
-            "",   # prefix
-            "",   # connector (root has no connector)
+            "",  # prefix
+            "",  # connector (root has no connector)
             visited,
             tree_lines,
         )
@@ -892,7 +917,11 @@ def overview(
                 if target and not _node_is_resolved(target, nodes):
                     unresolved_deps_list.append(target)
             unresolved_deps_list.sort()
-            blocking_info_u = f"  [blocked by: {', '.join(unresolved_deps_list)}]" if unresolved_deps_list else ""
+            blocking_info_u = (
+                f"  [blocked by: {', '.join(unresolved_deps_list)}]"
+                if unresolved_deps_list
+                else ""
+            )
             lines.append(f"{icon} {display_id}  {status}  {title}{blocking_info_u}")
 
     # --- Step 6: Cross-cutting section ---
@@ -935,7 +964,9 @@ def overview(
 
     lines.append("")
     lines.append("=== Summary ===")
-    lines.append(f"Ready: {ready_count}  Blocked: {blocked_count}  Total unresolved: {total_unresolved}")
+    lines.append(
+        f"Ready: {ready_count}  Blocked: {blocked_count}  Total unresolved: {total_unresolved}"
+    )
 
     # --- Step 8: tk integration ---
     lines.append("")

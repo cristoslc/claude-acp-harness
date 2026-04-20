@@ -9,6 +9,7 @@ Generates a focus-lane-scoped working surface with 7 sections:
 6. Decision Records — accumulated decisions from JSONL log
 7. Walk-Away Signal — remaining decisions or "done"
 """
+
 from __future__ import annotations
 
 import os
@@ -41,7 +42,10 @@ def _get_roadmap_hash(repo_root: str) -> str:
     try:
         result = subprocess.run(
             ["git", "hash-object", roadmap_path],
-            capture_output=True, text=True, cwd=repo_root, timeout=5,
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            timeout=5,
         )
         return result.stdout.strip()[:8] if result.returncode == 0 else "n/a"
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -53,7 +57,10 @@ def _get_head_commit(repo_root: str) -> str:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            capture_output=True, text=True, cwd=repo_root, timeout=5,
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            timeout=5,
         )
         return result.stdout.strip() if result.returncode == 0 else "unknown"
     except (subprocess.TimeoutExpired, FileNotFoundError):
@@ -65,7 +72,10 @@ def _get_recent_session_commits(repo_root: str, limit: int = 10) -> list[str]:
     try:
         result = subprocess.run(
             ["git", "log", f"-{limit}", "--format=%H%n%B%n---END---"],
-            capture_output=True, text=True, cwd=repo_root, timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            timeout=10,
         )
         if result.returncode != 0:
             return []
@@ -75,13 +85,18 @@ def _get_recent_session_commits(repo_root: str, limit: int = 10) -> list[str]:
 
 
 def _get_progress_commits(
-    child_ids: set[str], repo_root: str, limit: int = 5,
+    child_ids: set[str],
+    repo_root: str,
+    limit: int = 5,
 ) -> list[dict]:
     """Get recent commits whose full messages reference any child artifact ID."""
     try:
         result = subprocess.run(
             ["git", "log", "--oneline", "-50", "--all"],
-            capture_output=True, text=True, cwd=repo_root, timeout=10,
+            capture_output=True,
+            text=True,
+            cwd=repo_root,
+            timeout=10,
         )
         if result.returncode != 0:
             return []
@@ -95,10 +110,12 @@ def _get_progress_commits(
         for cid in child_ids:
             if cid in line:
                 parts = line.split(" ", 1)
-                commits.append({
-                    "hash": parts[0],
-                    "message": parts[1] if len(parts) > 1 else "",
-                })
+                commits.append(
+                    {
+                        "hash": parts[0],
+                        "message": parts[1] if len(parts) > 1 else "",
+                    }
+                )
                 break
         if len(commits) >= limit:
             break
@@ -186,7 +203,9 @@ def render_session_roadmap(
         top = scoped_recs[0]
         node = nodes.get(top["id"], {})
         title = node.get("title", top["id"])
-        weight_label = {3: "high", 2: "medium", 1: "low"}.get(top["vision_weight"], "medium")
+        weight_label = {3: "high", 2: "medium", 1: "low"}.get(
+            top["vision_weight"], "medium"
+        )
         rationale_parts = []
         if top["unblock_count"] > 0:
             rationale_parts.append(f"unblocks {top['unblock_count']}")
@@ -234,15 +253,27 @@ def render_session_roadmap(
     lines.append("## Walk-Away Signal")
     lines.append("")
     total_decisions = len(decision_recs)
-    recorded = len([r for r in decision_records if r.get("artifact") in {d["id"] for d in decision_recs}])
+    recorded = len(
+        [
+            r
+            for r in decision_records
+            if r.get("artifact") in {d["id"] for d in decision_recs}
+        ]
+    )
     remaining = total_decisions - recorded
     if remaining <= 0 and total_decisions == 0:
-        lines.append("No decisions needed — this focus area has no pending operator actions.")
+        lines.append(
+            "No decisions needed — this focus area has no pending operator actions."
+        )
     elif remaining <= 0:
         lines.append("All pending decisions have been addressed this session.")
     else:
         lines.append(f"**{remaining} decision(s) remaining** in this focus area.")
-        remaining_ids = [d["id"] for d in decision_recs if d["id"] not in {r.get("artifact") for r in decision_records}]
+        remaining_ids = [
+            d["id"]
+            for d in decision_recs
+            if d["id"] not in {r.get("artifact") for r in decision_records}
+        ]
         if remaining_ids:
             lines.append(f"Remaining: {', '.join(remaining_ids)}")
     lines.append("")
@@ -261,27 +292,35 @@ def _render_session_goal(
     all_actionable = decision_recs + impl_recs
 
     if not all_actionable:
-        lines.append(f"**Recommended goal:** Review the {focus_title} scope for completeness.")
+        lines.append(
+            f"**Recommended goal:** Review the {focus_title} scope for completeness."
+        )
         lines.append("")
         lines.append("No actionable items to drive a goal from.")
         return
 
     # Recommendation: address the top decision items (bounded to 3-5)
     if decision_recs:
-        top_decisions = decision_recs[:min(5, len(decision_recs))]
+        top_decisions = decision_recs[: min(5, len(decision_recs))]
         decision_ids = ", ".join(d["id"] for d in top_decisions)
-        lines.append(f"**Recommended goal:** Address {len(top_decisions)} pending decision(s): {decision_ids}")
+        lines.append(
+            f"**Recommended goal:** Address {len(top_decisions)} pending decision(s): {decision_ids}"
+        )
         lines.append("")
-        lines.append(f"*Justification:* These are operator-gated items blocking downstream work in {focus_title}. "
-                      f"Resolving them unblocks {sum(d['unblock_count'] for d in top_decisions)} downstream item(s).")
+        lines.append(
+            f"*Justification:* These are operator-gated items blocking downstream work in {focus_title}. "
+            f"Resolving them unblocks {sum(d['unblock_count'] for d in top_decisions)} downstream item(s)."
+        )
     else:
         # No decisions — recommend implementation
         top_impl = impl_recs[:3]
         impl_ids = ", ".join(d["id"] for d in top_impl)
         lines.append(f"**Recommended goal:** Progress implementation on {impl_ids}")
         lines.append("")
-        lines.append(f"*Justification:* No operator decisions are pending. These items are the highest-leverage "
-                      f"implementation work in {focus_title}.")
+        lines.append(
+            f"*Justification:* No operator decisions are pending. These items are the highest-leverage "
+            f"implementation work in {focus_title}."
+        )
 
     # Alternatives (max 2)
     lines.append("")
@@ -290,17 +329,29 @@ def _render_session_goal(
     if decision_recs and impl_recs and alternatives_shown < 2:
         top_impl = impl_recs[0]
         impl_node = nodes.get(top_impl["id"], {})
-        lines.append(f"**Alternative 1:** Shift to implementation — start with {top_impl['id']} ({impl_node.get('title', '')})")
-        lines.append(f"*Rationale:* If decisions need more thought, make progress on ready implementation work instead.")
+        lines.append(
+            f"**Alternative 1:** Shift to implementation — start with {top_impl['id']} ({impl_node.get('title', '')})"
+        )
+        lines.append(
+            "*Rationale:* If decisions need more thought, make progress on ready implementation work instead."
+        )
         alternatives_shown += 1
 
     if len(decision_recs) > 5 and alternatives_shown < 2:
-        lines.append(f"**Alternative {alternatives_shown + 1}:** Triage all {len(decision_recs)} decisions — "
-                      f"batch-approve or defer lower-priority items to reduce backlog")
-        lines.append(f"*Rationale:* A large decision backlog may indicate scope creep or items that should be dropped.")
+        lines.append(
+            f"**Alternative {alternatives_shown + 1}:** Triage all {len(decision_recs)} decisions — "
+            f"batch-approve or defer lower-priority items to reduce backlog"
+        )
+        lines.append(
+            "*Rationale:* A large decision backlog may indicate scope creep or items that should be dropped."
+        )
         alternatives_shown += 1
 
     if alternatives_shown < 2 and all_actionable:
-        lines.append(f"**Alternative {alternatives_shown + 1}:** Review scope — audit {focus_title} for "
-                      f"items that can be deferred or dropped")
-        lines.append(f"*Rationale:* Reducing scope is a valid session goal when the backlog grows faster than throughput.")
+        lines.append(
+            f"**Alternative {alternatives_shown + 1}:** Review scope — audit {focus_title} for "
+            f"items that can be deferred or dropped"
+        )
+        lines.append(
+            "*Rationale:* Reducing scope is a valid session goal when the backlog grows faster than throughput."
+        )

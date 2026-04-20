@@ -8,6 +8,7 @@ preserve history.
 Usage:
     uv run python3 migrate-lifecycle-dirs.py [--dry-run]
 """
+
 import glob
 import os
 import re
@@ -63,10 +64,7 @@ def git_mv(src, dst):
     if DRY_RUN:
         print(f"  [dry-run] git mv {src} -> {dst}")
         return True
-    result = subprocess.run(
-        ["git", "mv", src, dst],
-        capture_output=True, text=True
-    )
+    result = subprocess.run(["git", "mv", src, dst], capture_output=True, text=True)
     if result.returncode != 0:
         print(f"  ERROR: git mv failed: {result.stderr.strip()}")
         return False
@@ -79,11 +77,13 @@ def update_status_in_file(filepath, old_status, new_status):
         text = f.read()
 
     # Match status field in frontmatter
-    pattern = re.compile(r'^(status:\s*)' + re.escape(old_status) + r'\s*$', re.MULTILINE)
+    pattern = re.compile(
+        r"^(status:\s*)" + re.escape(old_status) + r"\s*$", re.MULTILINE
+    )
     if not pattern.search(text):
         return False
 
-    new_text = pattern.sub(r'\g<1>' + new_status, text)
+    new_text = pattern.sub(r"\g<1>" + new_status, text)
     if new_text == text:
         return False
 
@@ -113,7 +113,7 @@ def get_frontmatter_status(filepath):
             text = f.read()
     except FileNotFoundError:
         return None
-    m = re.search(r'^status:\s*(.+?)\s*$', text, re.MULTILINE)
+    m = re.search(r"^status:\s*(.+?)\s*$", text, re.MULTILINE)
     return m.group(1) if m else None
 
 
@@ -188,11 +188,15 @@ def migrate_phase_dir(type_dir, old_phase_dir, new_phase_name, old_status, new_s
                 moved += 1
                 # Update status in the moved file
                 if main_md:
-                    new_md_path = os.path.join(new_path, entry, os.path.basename(main_md))
+                    new_md_path = os.path.join(
+                        new_path, entry, os.path.basename(main_md)
+                    )
                     if not DRY_RUN and os.path.exists(new_md_path):
                         update_status_in_file(new_md_path, old_status, new_status)
                     elif DRY_RUN:
-                        print(f"  [dry-run] Update status: {old_status} -> {new_status} in {new_md_path}")
+                        print(
+                            f"  [dry-run] Update status: {old_status} -> {new_status} in {new_md_path}"
+                        )
 
         elif os.path.isfile(src) and entry.endswith(".md"):
             # Flat-file artifact (e.g., ADR)
@@ -207,7 +211,9 @@ def migrate_phase_dir(type_dir, old_phase_dir, new_phase_name, old_status, new_s
                 if not DRY_RUN and os.path.exists(new_file):
                     update_status_in_file(new_file, old_status, new_status)
                 elif DRY_RUN:
-                    print(f"  [dry-run] Update status: {old_status} -> {new_status} in {new_file}")
+                    print(
+                        f"  [dry-run] Update status: {old_status} -> {new_status} in {new_file}"
+                    )
 
     return moved
 
@@ -231,7 +237,7 @@ def remove_empty_dirs(base_dir):
 
 def main():
     print("SPEC-020: Migrate artifacts to normalized phase directories")
-    print(f"ADR-003 three-track lifecycle normalization\n")
+    print("ADR-003 three-track lifecycle normalization\n")
     if DRY_RUN:
         print("DRY RUN — no files modified\n")
 
@@ -240,13 +246,13 @@ def main():
     # Define all type directories and their phase migrations
     migrations = [
         # (type_dir, old_phase_dir, new_phase_dir, old_status, new_status)
-        ("docs/adr",      "Adopted",     "Active",    "Adopted",     "Active"),
-        ("docs/journey",  "Validated",   "Active",    "Validated",   "Active"),
-        ("docs/persona",  "Validated",   "Active",    "Validated",   "Active"),
-        ("docs/research", "Planned",     "Proposed",  "Planned",     "Proposed"),
-        ("docs/spec",     "Draft",       "Proposed",  "Draft",       "Proposed"),
-        ("docs/spec",     "Approved",    "Ready",     "Approved",    "Ready"),
-        ("docs/spec",     "Implemented", "Complete",  "Implemented", "Complete"),
+        ("docs/adr", "Adopted", "Active", "Adopted", "Active"),
+        ("docs/journey", "Validated", "Active", "Validated", "Active"),
+        ("docs/persona", "Validated", "Active", "Validated", "Active"),
+        ("docs/research", "Planned", "Proposed", "Planned", "Proposed"),
+        ("docs/spec", "Draft", "Proposed", "Draft", "Proposed"),
+        ("docs/spec", "Approved", "Ready", "Approved", "Ready"),
+        ("docs/spec", "Implemented", "Complete", "Implemented", "Complete"),
     ]
 
     for type_dir, old_phase, new_phase, old_status, new_status in migrations:
@@ -256,19 +262,33 @@ def main():
         if not os.path.isdir(old_path):
             continue
 
-        entries = [e for e in os.listdir(old_path)
-                   if not e.startswith("list-") and not e.startswith(".")]
+        entries = [
+            e
+            for e in os.listdir(old_path)
+            if not e.startswith("list-") and not e.startswith(".")
+        ]
         if not entries:
             continue
 
-        print(f"\n--- {type_dir}: {old_phase}/ -> {new_phase}/ ({len(entries)} items) ---")
-        count = migrate_phase_dir(type_dir, old_phase, new_phase, old_status, new_status)
+        print(
+            f"\n--- {type_dir}: {old_phase}/ -> {new_phase}/ ({len(entries)} items) ---"
+        )
+        count = migrate_phase_dir(
+            type_dir, old_phase, new_phase, old_status, new_status
+        )
         total_moved += count
 
     # Clean up empty old directories
     print("\n--- Cleanup empty directories ---")
-    for type_dir in ["docs/adr", "docs/journey", "docs/persona", "docs/research",
-                     "docs/spec", "docs/epic", "docs/vision"]:
+    for type_dir in [
+        "docs/adr",
+        "docs/journey",
+        "docs/persona",
+        "docs/research",
+        "docs/spec",
+        "docs/epic",
+        "docs/vision",
+    ]:
         if os.path.isdir(type_dir):
             remove_empty_dirs(type_dir)
 
