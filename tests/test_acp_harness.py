@@ -1,69 +1,209 @@
-"""
-Tests for the Claude ACP Harness
-"""
-
-import unittest
-import subprocess
-import sys
 import os
+import sys
+import unittest
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-# Add the src directory to the path so we can import the module
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from acp_harness import ClaudeACPHarness
+from acp_protocol import (
+    ACPCommandType,
+    ACPRequest,
+    ACPResponse,
+    ACPStatus,
+    parse_response,
+    wrap_with_sentinels,
+)
+from config import HarnessConfig, AuthMethod, SessionState, detect_auth_method
+from session_lifecycle import ClaudeSession, SessionLifecycle
+from verification_loop import VerificationLoop, GapClassification
 
 
-class TestClaudeACPHarness(unittest.TestCase):
+class TestACPProtocol(unittest.TestCase):
+    def test_request_schema(self):
+        req = ACPRequest(type=ACPCommandType.PROMPT, payload="hello")
+        self.assertEqual(req.type, ACPCommandType.PROMPT)
+        self.assertEqual(req.payload, "hello")
+        self.assertEqual(req.timeout, 120)
+        self.assertIsNotNone(req.id)
+
+    def test_request_empty_payload_rejected(self):
+        with self.assertRaises(Exception):
+            ACPRequest(type=ACPCommandType.PROMPT, payload="   ")
+
+    def test_response_schema(self):
+        resp = ACPResponse(
+            id="test", status=ACPStatus.SUCCESS, result="ok", duration_ms=42
+        )
+        self.assertEqual(resp.id, "test")
+        self.assertEqual(resp.status, ACPStatus.SUCCESS)
+        self.assertEqual(resp.duration_ms, 42)
+
+    def test_sentinel_wrapping(self):
+        req = ACPRequest(
+            id="abc123", type=ACPCommandType.PROMPT, payload="do something"
+        )
+        wrapped = wrap_with_sentinels(req)
+        self.assertIn("### ACP_START:abc123 ###", wrapped)
+        self.assertIn("### ACP_END:abc123 ###", wrapped)
+        self.assertIn("do something", wrapped)
+
+    def test_parse_response_success(self):
+        raw = "some text\n### ACP_START:xyz ###\nthe result\n### ACP_END:xyz ###\nmore text"
+        resp = parse_response(raw, "xyz")
+        self.assertEqual(resp.status, ACPStatus.SUCCESS)
+        self.assertEqual(resp.result, "the result")
+
+    def test_parse_response_missing_sentinels(self):
+        raw = "some output without markers"
+        resp = parse_response(raw, "xyz")
+        self.assertEqual(resp.status, ACPStatus.FAILURE)
+        self.assertIn("Sentinel markers not found", resp.error or "")
+
+
+class TestConfig(unittest.TestCase):
+    def test_default_config(self):
+        config = HarnessConfig()
+        self.assertEqual(config.pool_min_sessions, 2)
+        self.assertEqual(config.preference_auth, AuthMethod.SUBSCRIPTION_OAUTH)
+        self.assertEqual(config.api_port, 8420)
+
+    def test_detect_auth_api_key(self):
+        with patch.dict(os.environ, {"ANTHROPIC_API_KEY": "sk-ant-test"}, clear=False):
+            result = detect_auth_method()
+            self.assertEqual(result, AuthMethod.API_KEY)
+
+    def test_detect_auth_oauth_token(self):
+        env = {"CLAUDE_CODE_OAUTH_TOKEN": "test-token"}
+        with patch.dict(os.environ, env, clear=False):
+            os.environ.pop("ANTHROPIC_API_KEY", None)
+            result = detect_auth_method()
+            self.assertEqual(result, AuthMethod.CLAUDE_SETUP_TOKEN)
+
+    def test_detect_auth_default_subscription(self):
+        with patch.dict(os.environ, {}, clear=True):
+            with patch.object(Path, "exists", return_value=True):
+                result = detect_auth_method()
+                self.assertEqual(result, AuthMethod.SUBSCRIPTION_OAUTH)
+
+
+class TestSessionLifecycle(unittest.TestCase):
+    def test_session_creation(self):
+        session = ClaudeSession(session_id="test1", tmux_name="test-tmux")
+        self.assertEqual(session.session_id, "test1")
+        self.assertEqual(session.state, SessionState.STARTING)
+
+    def test_session_uptime(self):
+        import time
+
+        session = ClaudeSession(started_at=time.time() - 60)
+        self.assertGreater(session.uptime_seconds, 59)
+
+    def test_session_idle_time(self):
+        import time
+
+        session = ClaudeSession(last_activity=time.time() - 30)
+        self.assertGreater(session.idle_seconds, 29)
+
+    def test_session_status_report(self):
+        lifecycle = SessionLifecycle.__new__(SessionLifecycle)
+        lifecycle._sessions = {}
+        lifecycle.claude_executable = "claude"
+        lifecycle.max_reconnect_retries = 3
+        session = ClaudeSession(
+            session_id="s1",
+            tmux_name="t1",
+            state=SessionState.READY,
+            auth_method=AuthMethod.SUBSCRIPTION_OAUTH,
+        )
+        lifecycle._sessions["s1"] = session
+        status = lifecycle.session_status(session)
+        self.assertEqual(status["session_id"], "s1")
+        self.assertEqual(status["state"], "ready")
+        self.assertEqual(status["auth_method"], "subscription_oauth")
+
+
+class TestVerificationLoop(unittest.TestCase):
+    def test_gap_classification(self):
+        vl = VerificationLoop(
+            MagicMock(), loop_limit=5, reports_dir="/tmp/test-reports"
+        )
+
+        resp_small = ACPResponse(
+            id="t", status=ACPStatus.SUCCESS, result="FAIL: minor typo"
+        )
+        self.assertEqual(vl._classify_gap(resp_small), GapClassification.SMALL)
+
+        resp_large = ACPResponse(
+            id="t",
+            status=ACPStatus.SUCCESS,
+            result="FAIL: large architectural mismatch, escalate",
+        )
+        self.assertEqual(vl._classify_gap(resp_large), GapClassification.LARGE)
+
+        resp_medium = ACPResponse(
+            id="t", status=ACPStatus.SUCCESS, result="FAIL: partial implementation"
+        )
+        self.assertEqual(vl._classify_gap(resp_medium), GapClassification.MEDIUM)
+
+    def test_passes_verification(self):
+        vl = VerificationLoop(
+            MagicMock(), loop_limit=5, reports_dir="/tmp/test-reports"
+        )
+
+        pass_resp = ACPResponse(
+            id="t", status=ACPStatus.SUCCESS, result="PASS: all criteria met"
+        )
+        self.assertTrue(vl._passes_verification(pass_resp))
+
+        fail_resp = ACPResponse(
+            id="t", status=ACPStatus.SUCCESS, result="FAIL: missing coverage"
+        )
+        self.assertFalse(vl._passes_verification(fail_resp))
+
+
+class TestIntegrationTmux(unittest.TestCase):
     def setUp(self):
-        """Set up test fixtures before each test method."""
-        self.session_name = "test-claude-harness"
-        self.harness = ClaudeACPHarness(session_name=self.session_name)
+        self.session_name = "test-acp-integration"
 
     def tearDown(self):
-        """Tear down test fixtures after each test method."""
-        # Kill the test session if it exists
+        import subprocess
+
         try:
             subprocess.run(
                 ["tmux", "kill-session", "-t", self.session_name],
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )
-        except:
+        except Exception:
             pass
 
-    def test_init(self):
-        """Test that the harness initializes correctly."""
-        self.assertEqual(self.harness.session_name, self.session_name)
+    def test_tmux_session_lifecycle(self):
+        import subprocess
+        import time
 
-    def test_start_tmux_session(self):
-        """Test that we can start a tmux session."""
-        # This test requires tmux to be installed
         try:
-            result = self.harness.start_tmux_session()
-            self.assertTrue(result)
-
-            # Verify the session exists
             result = subprocess.run(
-                ["tmux", "has-session", "-t", self.session_name],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
+                ["tmux", "new-session", "-d", "-s", self.session_name, "bash"],
+                capture_output=True,
+                text=True,
             )
             self.assertEqual(result.returncode, 0)
-        except FileNotFoundError:
-            # Skip if tmux is not installed
-            self.skipTest("tmux not installed")
 
-    def test_send_command(self):
-        """Test that we can send a command to the tmux session."""
-        try:
-            # Start the session first
-            self.assertTrue(self.harness.start_tmux_session())
+            subprocess.run(
+                ["tmux", "send-keys", "-t", self.session_name, "echo 'test'", "Enter"],
+                capture_output=True,
+                text=True,
+            )
+            time.sleep(1)
 
-            # Send a simple command
-            result = self.harness.send_command("echo 'Hello, World!'")
-            self.assertTrue(result)
+            result = subprocess.run(
+                ["tmux", "capture-pane", "-p", "-t", self.session_name],
+                capture_output=True,
+                text=True,
+            )
+            self.assertIn("test", result.stdout or "")
         except FileNotFoundError:
-            # Skip if tmux is not installed
             self.skipTest("tmux not installed")
 
 

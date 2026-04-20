@@ -1,32 +1,35 @@
-# Claude ACP Harness Configuration
+pool:
+  min_sessions: 2
+  health_interval: 30
+  max_session_age: 4
+  max_reconnect_retries: 3
 
-# Default tmux session settings
-session:
-  name: "claude-harness"
-  socket_path: "/tmp/tmux-{uid}/default"
-  
-# I/O settings
 io:
-  # How often to poll for output (seconds)
   poll_interval: 0.1
-  # Maximum time to wait for command completion (seconds)
-  command_timeout: 30
-  
-# Claude integration settings
+  command_timeout: 120
+
 claude:
-  # Path to claude executable (if applicable)
   executable: "claude"
-  # Default working directory for claude sessions
   working_directory: "."
-  
-# Logging configuration
+
+auth:
+  method: "subscription_oauth"
+  provider: "anthropic"
+
+api:
+  host: "127.0.0.1"
+  port: 8420
+
 logging:
   level: "INFO"
   file: "claude-harness.log"
   max_size: "10MB"
   backup_count: 5
 
-# Development settings
+verification:
+  loop_limit: 5
+  reports_dir: "verification-reports"
+
 development:
   debug: false
   mock_tmux: false
