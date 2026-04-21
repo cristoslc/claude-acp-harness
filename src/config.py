@@ -29,6 +29,11 @@ class SessionState(str, enum.Enum):
     KILLED = "killed"
 
 
+class ExecutionMode(str, enum.Enum):
+    TMUX = "tmux"
+    PRINT = "print"
+
+
 class HarnessConfig(BaseSettings):
     pool_min_sessions: int = Field(default=2, alias="POOL_MIN_SESSIONS")
     health_check_interval: int = Field(default=30, alias="HEALTH_CHECK_INTERVAL")
@@ -37,6 +42,9 @@ class HarnessConfig(BaseSettings):
     max_reconnect_retries: int = Field(default=3, alias="MAX_RECONNECT_RETRIES")
     api_host: str = Field(default="127.0.0.1", alias="API_HOST")
     api_port: int = Field(default=8420, alias="API_PORT")
+    execution_mode: ExecutionMode = Field(
+        default=ExecutionMode.PRINT, alias="EXECUTION_MODE"
+    )
     preference_auth: AuthMethod = Field(
         default=AuthMethod.SUBSCRIPTION_OAUTH, alias="PREFERENCE_AUTH"
     )

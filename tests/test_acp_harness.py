@@ -1,3 +1,4 @@
+import asyncio
 import os
 import sys
 import unittest
@@ -14,7 +15,15 @@ from acp_protocol import (
     parse_response,
     wrap_with_sentinels,
 )
-from config import HarnessConfig, AuthMethod, SessionState, detect_auth_method
+from command_router import CommandRouter
+from config import (
+    HarnessConfig,
+    AuthMethod,
+    ExecutionMode,
+    SessionState,
+    detect_auth_method,
+)
+from direct_executor import DirectExecutor
 from session_lifecycle import ClaudeSession, SessionLifecycle
 from verification_loop import VerificationLoop, GapClassification
 
@@ -205,6 +214,128 @@ class TestIntegrationTmux(unittest.TestCase):
             self.assertIn("test", result.stdout or "")
         except FileNotFoundError:
             self.skipTest("tmux not installed")
+
+
+class TestDirectExecutorE2E(unittest.TestCase):
+    """End-to-end tests that invoke Claude Code via --print mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        import shutil
+
+        cls.claude_path = shutil.which("claude")
+        if cls.claude_path is None:
+            raise unittest.SkipTest("Claude Code CLI not found in PATH")
+
+    def test_simple_prompt_returns_success(self):
+        """Verify that a simple prompt to Claude returns a non-empty response."""
+        config = HarnessConfig(
+            claude_executable=self.claude_path,
+            command_timeout=60,
+        )
+        executor = DirectExecutor(config)
+
+        request = ACPRequest(
+            type=ACPCommandType.PROMPT,
+            payload="Respond with exactly: ACP_E2E_OK",
+            timeout=60,
+        )
+
+        response = asyncio.run(executor.execute(request))
+        self.assertEqual(
+            response.status,
+            ACPStatus.SUCCESS,
+            f"Expected SUCCESS, got {response.status}: {response.error}",
+        )
+        self.assertIn("ACP_E2E_OK", response.result or "")
+        self.assertGreater(response.duration_ms, 0)
+
+    def test_timeout_returns_timeout_status(self):
+        """Verify that a very short timeout returns TIMEOUT status."""
+        config = HarnessConfig(
+            claude_executable=self.claude_path,
+            command_timeout=60,
+        )
+        executor = DirectExecutor(config)
+
+        # 1s timeout with a long prompt — Claude startup takes ~3-5s
+        request = ACPRequest(
+            type=ACPCommandType.PROMPT,
+            payload="Write a detailed essay about the history of computing from ancient times to modern AI",
+            timeout=1,
+        )
+
+        response = asyncio.run(executor.execute(request))
+        self.assertEqual(
+            response.status,
+            ACPStatus.TIMEOUT,
+            f"Expected TIMEOUT, got {response.status}: {response.result}",
+        )
+
+    def test_multiple_requests_sequential(self):
+        """Verify that multiple sequential requests each get valid responses."""
+        config = HarnessConfig(
+            claude_executable=self.claude_path,
+            command_timeout=60,
+        )
+        executor = DirectExecutor(config)
+
+        for i in range(3):
+            request = ACPRequest(
+                type=ACPCommandType.PROMPT,
+                payload=f"Respond with exactly: ACP_SEQ_{i}",
+                timeout=60,
+            )
+            response = asyncio.run(executor.execute(request))
+            self.assertEqual(
+                response.status,
+                ACPStatus.SUCCESS,
+                f"Request {i} failed: {response.error}",
+            )
+            self.assertIn(
+                f"ACP_SEQ_{i}",
+                response.result or "",
+                f"Request {i} response: {response.result}",
+            )
+
+
+class TestCommandRouterPrintMode(unittest.TestCase):
+    """Test CommandRouter in --print (direct) mode."""
+
+    @classmethod
+    def setUpClass(cls):
+        import shutil
+
+        cls.claude_path = shutil.which("claude")
+        if cls.claude_path is None:
+            raise unittest.SkipTest("Claude Code CLI not found in PATH")
+
+    def test_submit_via_router(self):
+        """Verify that CommandRouter in PRINT mode executes requests via DirectExecutor."""
+        config = HarnessConfig(
+            claude_executable=self.claude_path,
+            execution_mode=ExecutionMode.PRINT,
+            command_timeout=60,
+        )
+        lifecycle = SessionLifecycle(
+            claude_executable=config.claude_executable,
+            max_reconnect_retries=1,
+        )
+        router = CommandRouter(lifecycle, default_timeout=60, config=config)
+
+        request = ACPRequest(
+            type=ACPCommandType.PROMPT,
+            payload="Respond with exactly: ROUTER_OK",
+            timeout=60,
+        )
+
+        response = asyncio.run(router.submit(request))
+        self.assertEqual(
+            response.status,
+            ACPStatus.SUCCESS,
+            f"Expected SUCCESS, got {response.status}: {response.error}",
+        )
+        self.assertIn("ROUTER_OK", response.result or "")
 
 
 if __name__ == "__main__":

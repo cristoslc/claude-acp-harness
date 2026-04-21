@@ -12,7 +12,9 @@ from acp_protocol import (
     parse_response,
     wrap_with_sentinels,
 )
-from session_lifecycle import ClaudeSession, SessionLifecycle, SessionState
+from config import ExecutionMode, HarnessConfig, SessionState
+from direct_executor import DirectExecutor
+from session_lifecycle import ClaudeSession, SessionLifecycle
 
 logger = logging.getLogger("acp-harness")
 
@@ -25,20 +27,34 @@ class PendingRequest:
 
 
 class CommandRouter:
-    def __init__(self, lifecycle: SessionLifecycle, default_timeout: int = 120):
+    def __init__(
+        self,
+        lifecycle: SessionLifecycle,
+        default_timeout: int = 120,
+        config: Optional[HarnessConfig] = None,
+    ):
         self.lifecycle = lifecycle
         self.default_timeout = default_timeout
+        self.config = config
         self._queue: deque[PendingRequest] = deque()
         self._active_calls: dict[str, ClaudeSession] = {}
         self._call_history: list[dict] = []
         self._running = False
         self._dispatcher_task: Optional[asyncio.Task] = None
+        self._direct_executor: Optional[DirectExecutor] = None
 
-    async def start(self):
+        if config and config.execution_mode == ExecutionMode.PRINT:
+            self._direct_executor = DirectExecutor(config)
+
+    async def start(self) -> None:
         self._running = True
-        self._dispatcher_task = asyncio.create_task(self._dispatch_loop())
+        if self._direct_executor:
+            logger.info("command_router_started", mode="print")
+        else:
+            self._dispatcher_task = asyncio.create_task(self._dispatch_loop())
+            logger.info("command_router_started", mode="tmux")
 
-    async def stop(self):
+    async def stop(self) -> None:
         self._running = False
         if self._dispatcher_task:
             self._dispatcher_task.cancel()
@@ -48,6 +64,11 @@ class CommandRouter:
                 pass
 
     async def submit(self, request: ACPRequest) -> ACPResponse:
+        if self._direct_executor:
+            response = await self._direct_executor.execute(request)
+            self._record_call(request, response)
+            return response
+
         future: asyncio.Future[ACPResponse] = asyncio.get_event_loop().create_future()
         pending = PendingRequest(request, future)
         self._queue.append(pending)
@@ -149,7 +170,7 @@ class CommandRouter:
             await asyncio.sleep(poll_interval)
         raise asyncio.TimeoutError()
 
-    def _record_call(self, request: ACPRequest, response: ACPResponse):
+    def _record_call(self, request: ACPRequest, response: ACPResponse) -> None:
         self._call_history.append(
             {
                 "request_id": request.id,

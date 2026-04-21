@@ -14,7 +14,9 @@ from observability import (
     get_metrics,
     ACTIVE_SESSIONS,
 )
-from session_lifecycle import SessionLifecycle, SessionState
+from config import ExecutionMode, HarnessConfig, SessionState
+from direct_executor import DirectExecutor
+from session_lifecycle import SessionLifecycle
 from session_pool import SessionPool
 from verification_loop import VerificationLoop
 
@@ -44,7 +46,9 @@ def create_app(config: HarnessConfig) -> FastAPI:
         max_reconnect_retries=config.max_reconnect_retries,
     )
     pool = SessionPool(lifecycle, config)
-    router = CommandRouter(lifecycle, default_timeout=config.command_timeout)
+    router = CommandRouter(
+        lifecycle, default_timeout=config.command_timeout, config=config
+    )
     verification = VerificationLoop(
         router,
         loop_limit=config.verification_loop_limit,
